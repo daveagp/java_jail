@@ -37,34 +37,43 @@ public class JDI2JSON {
     private TreeMap<Long, ObjectReference> heap;
     private TreeSet<Long> heap_done;
 
+    /*    private ArrayList<Long> frame_stack = new ArrayList<Long>();*/
+    private long frame_ticker = 0;
+
     public List<ReferenceType> staticListable = new ArrayList<>();
 
     public JDI2JSON(InputStream vm_stdout, InputStream vm_stderr) {
         stdout = new InputPuller(vm_stdout);
         stderr = new InputPuller(vm_stderr);
+	//frame_stack.add(frame_ticker++);
     }
     
     // returns null when nothing changed since the last time
     // (or when only event type changed and new value is "step_line")
-    public JsonObject convertExecutionPoint(Event e, Location loc, ThreadReference t) {
+    public ArrayList<JsonObject> convertExecutionPoint(Event e, Location loc, ThreadReference t) {
         stdout.pull();
         stderr.pull();        
+
+	//System.out.println(e);
+
+	ArrayList<JsonObject> results = new ArrayList<>();
         
         heap_done = new TreeSet<Long>();
         heap = new TreeMap<>();
+
+	JsonValue returnValue = null;
 
         JsonObjectBuilder result = Json.createObjectBuilder();
         result.add("stdout", stdout.getContents());
         if (e instanceof MethodEntryEvent) {
             result.add("event", "call");
+	    //frame_stack.add(frame_ticker++);
             result.add("line", loc.lineNumber());
         }
         else if (e instanceof MethodExitEvent) {
-            JsonValue returnValue = convertValue(((MethodExitEvent)e).returnValue());
-            // because the returning frame is already gone, we just
-            // fake that it's still there, returning the most recent e.p.
-            // with the modification added
-            return createReturnEventFrom(loc, last_ep, returnValue);
+            returnValue = convertValue(((MethodExitEvent)e).returnValue());
+	    result.add("event", "return");
+	    result.add("line", loc.lineNumber());
         }
         else if (e instanceof BreakpointEvent || e instanceof StepEvent) {
             result.add("event", "step_line");
@@ -76,12 +85,14 @@ public class JDI2JSON {
                         
         JsonArrayBuilder frames = Json.createArrayBuilder();
         try {
-            //int count = 0;
+	    boolean firstFrame = true;
             for (StackFrame sf : t.frames()) {
                 if (!showFramesInLocation(sf.location()))
                     continue;
-                //count++;
-                frames.add(convertFrame(sf));
+                frame_ticker++;
+                frames.add(convertFrame(sf, firstFrame, returnValue));
+		firstFrame = false;
+		returnValue = null;
             }
         }
         catch (IncompatibleThreadStateException ex) {
@@ -89,7 +100,10 @@ public class JDI2JSON {
 	    
             throw new RuntimeException("ITSE");
         }
-        result.add("stack_locals", frames);
+        result.add("stack_to_render", frames);
+
+        //if (e instanceof MethodExitEvent)
+	//  frame_stack.remove(frame_stack.size()-1);
 
         JsonObjectBuilder statics = Json.createObjectBuilder();
         JsonArrayBuilder statics_a = Json.createArrayBuilder();
@@ -99,23 +113,24 @@ public class JDI2JSON {
                     if (f.isStatic()) {
                         statics.add(rt.name()+"."+f.name(),
                                     convertValue(rt.getValue(f)));
-                        statics_a.add(f.typeName()+"."+f.name());
+                        statics_a.add(rt.name()+"."+f.name());
                     }
         result.add("globals", statics);
-        //result.add("ordered_globals", statics_a);
+        result.add("ordered_globals", statics_a);
         
         result.add("func_name", loc.method().name());
         
-        /*JsonObjectBuilder heapDescription = Json.createObjectBuilder();
-        describeHeap(heapDescription);
-        result.add("heap", heapDescription);*/
-        JsonObject curr_ep = result.build();        
-        if (reallyChanged(last_ep, curr_ep)) {
-            last_ep = curr_ep;
-            return curr_ep;
-        }
-        else
-            return null;
+        JsonObjectBuilder heapDescription = Json.createObjectBuilder();
+        convertHeap(heapDescription);
+        result.add("heap", heapDescription);
+
+	JsonObject this_ep = result.build();
+	if (!this_ep.equals(last_ep)) {
+	    results.add(this_ep);
+	    last_ep = this_ep;
+	}
+	
+	return results;
     }
     
     private String[] builtin_packages = {"java", "javax", "sun", "com.sun"};
@@ -147,14 +162,20 @@ public class JDI2JSON {
 	    for (Map.Entry<String, JsonValue> me : base_ep.entrySet()) {
 		if (me.getKey().equals("event") || me.getKey().equals("line")) 
 		    {}
-		else if (me.getKey().equals("stack_locals")) {
-		    JsonArray old_stack_locals = (JsonArray)me.getValue();
-		    JsonArray old_top_name_frame = (JsonArray)(old_stack_locals.get(0));
-		    JsonObject old_top_frame_vars = (JsonObject)(old_top_name_frame.get(1));
-		    result.add("stack_locals", 
-			       jsonModifiedArray(old_stack_locals, 0,
-						 jsonModifiedArray(old_top_name_frame, 1, 
-								   jsonModifiedObject(old_top_frame_vars, "__return__", returned))));
+		else if (me.getKey().equals("stack_to_render")) {
+		    JsonArray old_stack_to_render = (JsonArray)me.getValue();
+		    JsonObject old_top_frame = (JsonObject)(old_stack_to_render.get(0));
+		    JsonObject old_top_frame_vars = (JsonObject)(old_top_frame.get("encoded_locals"));
+		    JsonArray old_top_frame_vars_o = (JsonArray)(old_top_frame.get("ordered_varnames"));
+		    result.add("stack_to_render", 
+			       jsonModifiedArray(old_stack_to_render, 0,
+						 jsonModifiedObject
+						 (jsonModifiedObject
+						  (old_top_frame, 
+						   "encoded_locals", 
+						   jsonModifiedObject(old_top_frame_vars, "__return__", returned)),
+						  "ordered_varnames", 
+						  jsonModifiedArray(old_top_frame_vars_o, -1, jsonString("__return__")))));
 		}
 		else result.add(me.getKey(), me.getValue());
 	    }
@@ -167,14 +188,16 @@ public class JDI2JSON {
     
     private boolean reallyChanged(JsonObject old_ep, JsonObject new_ep) {
         if (old_ep == null) return true;
-        return (!new_ep.equals(jsonModifiedObject(old_ep, "event", 
-                                                  jsonString("step_line"))));
+        return !new_ep.equals(old_ep);
     }
     
-    private JsonArrayBuilder convertFrame(StackFrame sf) {
+    private JsonObjectBuilder convertFrame(StackFrame sf, boolean highlight, JsonValue returnValue) {
         JsonObjectBuilder result = Json.createObjectBuilder();
-        if (sf.thisObject() != null)
+        JsonArrayBuilder result_ordered = Json.createArrayBuilder();
+        if (sf.thisObject() != null) {
             result.add("this", convertValue(sf.thisObject()));
+            result_ordered.add("this");
+	}
         List<LocalVariable> frame_vars = null;
         try {
             frame_vars = sf.location().method().variables(); //only throwing statement
@@ -182,23 +205,34 @@ public class JDI2JSON {
                 try {
                     result.add(lv.name(),
                                convertValue(sf.getValue(lv)));
+                    result_ordered.add(lv.name());
                 }
                 catch (IllegalArgumentException exc) {
                     // variable not yet defined, don't list it
                 }
             }
-            
-        }
+	}
         catch (AbsentInformationException ex) {
             //System.out.println("AIE: can't list variables in " + sf.location());
         }            
-        return Json.createArrayBuilder()
-     .add(sf.location().method().name())
-     .add(result);
+        if (returnValue!=null) {
+            result.add("__return__", returnValue);
+            result_ordered.add("__return__");
+	}        
+	return Json.createObjectBuilder()
+	    .add("func_name", sf.location().method().name())
+	    .add("encoded_locals", result)
+	    .add("ordered_varnames", result_ordered)
+	    .add("parent_frame_id_list", Json.createArrayBuilder())
+	    .add("is_highlighted", highlight)//frame_stack.size()-1)
+	    .add("is_zombie", false)
+	    .add("is_parent", false)
+	    .add("unique_hash", ""+frame_ticker)//frame_stack.get(level))
+	    .add("frame_id", frame_ticker);//frame_stack.get(level));
     }
     
-    /*void describeHeap(JsonObjectBuilder result) {
-        TreeSet<Long> heap_done = new java.util.TreeSet<>();
+   void convertHeap(JsonObjectBuilder result) {
+        heap_done = new java.util.TreeSet<>();
         while (!heap.isEmpty()) {
             Map.Entry<Long, ObjectReference> first = heap.firstEntry();
             ObjectReference obj = first.getValue();
@@ -206,42 +240,45 @@ public class JDI2JSON {
             heap.remove(id);
             if (heap_done.contains(id))
                 continue;
-            result.add(""+id, convertObject(obj));
             heap_done.add(id);
+            result.add(""+id, convertObject(obj, true));
         }
-    }*/
+    }
     
-    private JsonValue convertObject(ObjectReference obj) {
+    private JsonValue convertObject(ObjectReference obj, boolean fullVersion) {
         JsonArrayBuilder result = Json.createArrayBuilder();
-        if (obj instanceof ArrayReference) {
-            if (heap_done.contains(obj.uniqueID())) {
-                result.add("P_LIST");
-                result.add(obj.uniqueID());
-            }
-            else {
-                result.add("LIST");
-                result.add(obj.uniqueID());
-                heap_done.add(obj.uniqueID());
-                for (Value v : ((ArrayReference)obj).getValues())
-                    result.add(convertValue(v));
-            }
-            return result.build();
-        }
+
+	// abbreviated versions are for references to objects
+	if (!fullVersion) {
+	    result.add("REF").add(obj.uniqueID());
+	    heap.put(obj.uniqueID(), obj);
+	    return result.build();
+	}
+
+	// full versions are for describing the objects themselves,
+	// in the heap
+        else if (obj instanceof ArrayReference) {
+	    result.add("LIST");
+	    heap_done.add(obj.uniqueID());
+	    for (Value v : ((ArrayReference)obj).getValues()) {
+		result.add(convertValue(v));
+	    }
+	    return result.build();
+	}
         else if (obj instanceof StringReference) {
-            return jsonString(((StringReference)obj).value());
+            return Json.createArrayBuilder()
+		.add("HEAP_PRIMITIVE")
+		.add("String")
+		.add(jsonString(((StringReference)obj).value()))
+		.build();
         }
         // do we need special cases for ClassObjectReference, ThreadReference,.... ?
         
         // now deal with Objects. 
-        else if (heap_done.contains(obj.uniqueID())) {            
-            result.add("P_INSTANCE");
-            result.add(obj.uniqueID());
-            return result.build();
-        }
         else {
             heap_done.add(obj.uniqueID());
-            result.add("INSTANCE").add(obj.uniqueID()).
-                add(obj.referenceType().name());
+            result.add("INSTANCE")
+                .add(obj.referenceType().name());
             if (showGuts(obj.referenceType())) {
                 // fields: -inherited -hidden +synthetic
                 // visibleFields: +inherited -hidden +synthetic
@@ -276,21 +313,22 @@ public class JDI2JSON {
             return jsonString("<VOID>");
         else if (!(v instanceof ObjectReference)) return JsonValue.NULL; //not a hack
         else {
-            return convertObject((ObjectReference)v);
-/*            ObjectReference obj = (ObjectReference)v;
+	    ObjectReference obj = (ObjectReference)v;
             heap.put(obj.uniqueID(), obj);
-            return Json.createArrayBuilder().add("REF").add(obj.uniqueID()).build();*/
+            return convertObject(obj, false);
         }
     }
 
 
     static String error(String message) {
-	return Json.createArrayBuilder().add
+	return 
+	    Json.createArrayBuilder().add
 	    (Json.createObjectBuilder()
 	     .add("line", "1")
 	     .add("event", "uncaught_exception")
 	     .add("offset", "1")
-	     .add("exception_msg", message)).build().toString();
+	     .add("exception_msg", message))
+	    .build().toString();
     }
 
     /* JSON utility methods */
@@ -317,6 +355,7 @@ public class JDI2JSON {
         return result.build();
     }
 
+    // add at specified position, or end if -1
     static JsonArray jsonModifiedArray(JsonArray arr, int tgt, JsonValue v) {
         JsonArrayBuilder result = Json.createArrayBuilder();
         int i = 0;
@@ -325,6 +364,8 @@ public class JDI2JSON {
             else result.add(w);
             i++;
         }
+	if (tgt == -1)
+	    result.add(v);
         return result.build();
     }
 

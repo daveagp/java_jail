@@ -72,13 +72,13 @@ public class TracingThread extends Thread {
         MethodEntryRequest menr = mgr.createMethodEntryRequest();
         for (String clob : no_breakpoint_requests)
             menr.addClassExclusionFilter(clob);
-        menr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
+        menr.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
         menr.enable();
 
         MethodExitRequest mexr = mgr.createMethodExitRequest();
         for (String clob : no_breakpoint_requests)
             mexr.addClassExclusionFilter(clob);
-        mexr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
+        mexr.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
         mexr.enable();
 
         ThreadDeathRequest tdr = mgr.createThreadDeathRequest();
@@ -153,14 +153,17 @@ public class TracingThread extends Thread {
             }
             Location loc = ((LocatableEvent)event).location();
             if (steps < MAX_STEPS && jdi2json.reportEventsAtLocation(loc)) {
-                JsonObject ep = jdi2json.convertExecutionPoint(event, loc, theThread);
-                // uninteresting/unchanged ex. points are not reported
-                if (ep != null) {
-                    output.add(ep);
-		    steps++;	  
-		    if (steps == MAX_STEPS) {
-			vm.exit(0);
+		try {
+		    for (JsonObject ep : jdi2json.convertExecutionPoint(event, loc, theThread)) {
+			output.add(ep);
+			steps++;	  
+			if (steps == MAX_STEPS) {
+			    vm.exit(0);
+			}
 		    }
+		} catch (RuntimeException e) {
+		    System.out.println("Error " + e.toString());
+		    e.printStackTrace();
 		}
             }
         }
