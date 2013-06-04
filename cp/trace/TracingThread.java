@@ -57,7 +57,8 @@ public class TracingThread extends Thread {
         super("event-handler");
         this.vm = vm;
         mgr = vm.eventRequestManager();
-        jdi2json = new JDI2JSON(vm.process().getInputStream(),
+        jdi2json = new JDI2JSON(vm,
+                                vm.process().getInputStream(),
                                 vm.process().getErrorStream());
         setEventRequests();
     }
@@ -128,15 +129,23 @@ public class TracingThread extends Thread {
                 break;
             }
         }
-        System.out.println(output.build().toString());
+        if (steps == 0) {
+            // not the most elegant way to detect this, but the approaches
+            // I tried led to classloaders running in the wrong places
+            System.out.println(JDI2JSON.error("Did not find: public static void main(String[])"));
+        }
+        else {
+            System.out.println(output.build().toString());
+        }
     }
 
     ThreadReference theThread = null;
         
     private void handleEvent(Event event) {
-        if (event instanceof ExceptionEvent) {
+        /*if (event instanceof ExceptionEvent) {
             exceptionEvent((ExceptionEvent)event);
-        } else if (event instanceof ClassPrepareEvent) {
+            } else*/ 
+        if (event instanceof ClassPrepareEvent) {
             classPrepareEvent((ClassPrepareEvent)event);
         } else if (event instanceof VMDeathEvent) {
             vmDeathEvent((VMDeathEvent)event);
@@ -200,6 +209,7 @@ public class TracingThread extends Thread {
     }
 
     private void classPrepareEvent(ClassPrepareEvent event)  {
+        //System.out.println("CPE!");
         ReferenceType rt = event.referenceType();
 	//	System.out.println(rt.toString());
         jdi2json.staticListable.add(rt);
@@ -212,28 +222,6 @@ public class TracingThread extends Thread {
         catch (AbsentInformationException e) {
             System.out.println("AIE!");
         }
-    }
-
-    // is this useful later? who knows
-    private void exceptionEvent(ExceptionEvent event) {
-        String msg = "";
-        try {
-            ReferenceType _Exception = vm.classesByName("java.lang.Exception").get(0);
-            StringReference m = (StringReference)
-                event.exception().invokeMethod(event.thread(), 
-                                               _Exception.methodsByName("toString").get(0),
-                                               new ArrayList<Value>(),
-                                               0);
-            msg = m.value();
-            //System.out.println("type: "+event.exception().type());
-            //System.out.println("message: "+msg);
-        }
-        catch (Exception e) {
-            System.out.println("fail dynamic message lookup: "+msg);
-            e.printStackTrace();
-        }
-    //));
-        //System.out.println(event.catchLocation());
     }
 
     public void vmDeathEvent(VMDeathEvent event) {

@@ -16,27 +16,31 @@ public class Trace {
     // same as "java command": calls main
     // seems to fail silently if there is no main with the right signature 
     Trace(String className) throws SorryDaveICantDoThat {
-	try {
-	    Class<?> clazz = Class.forName(className);
-	    java.lang.reflect.Method meth = clazz.getMethod("main", String[].class);
-	}
-	catch (ClassNotFoundException e) {
+
+        VirtualMachine vm = launchVM(className);	    
+        vm.setDebugTraceMode(0);
+        TracingThread tt = new TracingThread(vm);
+
+        // we construct the tracing thread first, to prevent 
+        // the static initializer from doing things we don't want;
+
+        /*        java.util.List<ReferenceType> seek = vm.classesByName(className);
+        if (seek.size() != 1) {
 	    String msg = "Error: public class " + className + " not found";
 	    System.out.println(JDI2JSON.error(msg));
 	    throw new SorryDaveICantDoThat(msg);
 	}
-	catch (NoSuchMethodException e) {
-	    String msg = "Error: class " + className + " lacks public static void main(String[])";
+        ReferenceType rt = seek.get(0);
+        java.util.List<Method> main = rt.methodsByName("main", "([Ljava/lang/String;)V");
+        if (main.size() != 1 || !main.get(0).isStatic() || !main.get(0).isPublic()) {
+	    String msg = "Error: class " + className + " needs public static void main(String[])";
 	    System.out.println(JDI2JSON.error(msg));
 	    throw new SorryDaveICantDoThat(msg);
-	}
-	catch (SecurityException e) {
-	}
-	    
-        VirtualMachine vm = launchVM(className);
-        vm.setDebugTraceMode(0);
-        new TracingThread(vm).start();
+            }*/
+
+        tt.start();
         vm.resume();
+        
     }
 
     VirtualMachine launchVM(String className) {
@@ -45,14 +49,14 @@ public class Trace {
             java.util.Map<String, Connector.Argument> args 
                 = connector.defaultArguments();
             ((Connector.Argument)(args.get("main"))).setValue(className);
-	    /*	    {
-		for (java.util.Map.Entry<String, Connector.Argument> arg: args.entrySet()) {
+	    	    {
+                        /*		for (java.util.Map.Entry<String, Connector.Argument> arg: args.entrySet()) {
 		    System.out.println(arg.getKey());
 		    System.out.println("["+arg.getValue().value()+"]");
 		    System.out.println(arg.getValue().description());
 		    System.out.println(arg.getValue().isValid(arg.getValue().value()));
+                    }*/
 		}
-		}*/
 	    //System.out.println("About to call LaunchingConnector.launch...");
 	    VirtualMachine result = connector.launch(args);
 	    //System.out.println("...done");

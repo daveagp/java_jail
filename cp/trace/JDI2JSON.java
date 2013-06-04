@@ -32,6 +32,7 @@ public class JDI2JSON {
         }
     }
     
+    private VirtualMachine vm;
     private InputPuller stdout, stderr;
     private JsonObject last_ep = null;
     private TreeMap<Long, ObjectReference> heap;
@@ -42,7 +43,7 @@ public class JDI2JSON {
 
     public List<ReferenceType> staticListable = new ArrayList<>();
 
-    public JDI2JSON(InputStream vm_stdout, InputStream vm_stderr) {
+    public JDI2JSON(VirtualMachine vm, InputStream vm_stdout, InputStream vm_stderr) {
         stdout = new InputPuller(vm_stdout);
         stderr = new InputPuller(vm_stderr);
 	//frame_stack.add(frame_ticker++);
@@ -79,8 +80,16 @@ public class JDI2JSON {
             result.add("event", "step_line");
             result.add("line", loc.lineNumber());
         }
-        else {
-            throw new RuntimeException("Bad event " + e);
+        else if (e instanceof ExceptionEvent) {
+            // we could compare this with null to see if it was caught.
+            // Location katch = ((ExceptionEvent)e).catchLocation();
+            
+            // but it turns out we don't care, since either the code
+            // keeps going or just halts appropriately anyway.
+
+            result.add("event", "exception");
+            
+            result.add("exception_msg", exceptionMessage((ExceptionEvent)e));
         }
                         
         JsonArrayBuilder frames = Json.createArrayBuilder();
@@ -217,20 +226,51 @@ public class JDI2JSON {
             result.add("this", convertValue(sf.thisObject()));
             result_ordered.add("this");
 	}
-        List<LocalVariable> frame_vars = null;
+        List<LocalVariable> frame_vars = null, frame_args = null;
         try {
-            frame_vars = sf.location().method().variables(); //only throwing statement
-            for (LocalVariable lv : frame_vars) {
+            // args make sense to show first
+            frame_args = sf.location().method().arguments(); //throwing statement
+            for (LocalVariable lv : frame_args) {
+                //System.out.println(sf.location().method().getClass());
                 try {
                     result.add(lv.name(),
                                convertValue(sf.getValue(lv)));
                     result_ordered.add(lv.name());
                 }
                 catch (IllegalArgumentException exc) {
-                    // variable not yet defined, don't list it
+                    System.out.println("That shouldn't happen!");
                 }
             }
-	}
+
+            // now non-args
+
+            /* We're using the fact that the hashCode tells us something
+               about the variable's position (which is subject to change)
+               to compensate for that the natural order of variables()
+               is often different from the declaration order (see LinkedList.java) */
+            frame_vars = sf.location().method().variables(); //throwing statement
+            TreeMap<Integer, String> orderByHash = null;
+            int offset = 0;
+            for (LocalVariable lv : frame_vars) 
+                if (!lv.isArgument()) 
+                    if (!lv.name().endsWith("$")) { // skip for-loop synthetics
+                        try {
+                            result.add(lv.name(),
+                                       convertValue(sf.getValue(lv)));
+                            if (orderByHash == null) {
+                                offset = lv.hashCode();
+                                orderByHash = new TreeMap<>();
+                            }
+                            orderByHash.put(lv.hashCode() - offset, lv.name());
+                        }
+                        catch (IllegalArgumentException exc) {
+                            // variable not yet defined, don't list it
+                        }
+                    }
+            if (orderByHash != null) // maybe no local vars
+                for (Map.Entry<Integer,String> me : orderByHash.entrySet())
+                    result_ordered.add(me.getValue());
+        }
         catch (AbsentInformationException ex) {
             //System.out.println("AIE: can't list variables in " + sf.location());
         }            
@@ -338,7 +378,6 @@ public class JDI2JSON {
         }
     }
 
-
     static String error(String message) {
 	return 
 	    Json.createArrayBuilder().add
@@ -349,6 +388,31 @@ public class JDI2JSON {
 	     .add("exception_msg", message))
 	    .build().toString();
     }
+
+    String exceptionMessage(ExceptionEvent event) {
+        String msg = "";
+        try {
+            msg += "a";
+            ObjectReference exc = event.exception();
+            ReferenceType excType = exc.referenceType();
+            msg += "x";
+            StringReference m = (StringReference)
+                event.exception().invokeMethod(event.thread(), 
+                                               excType.methodsByName("toString").get(0),
+                                               new ArrayList<Value>(),
+                                               0);
+            msg += "c";
+            return m.value();
+            //System.out.println("type: "+event.exception().type());
+            //System.out.println("message: "+msg);
+        }
+        catch (Exception e) {
+            return msg + "fail dynamic message lookup";
+            //e.printStackTrace();
+        }
+    }
+
+
 
     /* JSON utility methods */
     
