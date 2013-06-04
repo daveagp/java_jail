@@ -19,10 +19,10 @@ public class Trace {
 
         VirtualMachine vm = launchVM(className);	    
         vm.setDebugTraceMode(0);
-        TracingThread tt = new TracingThread(vm);
+        TracingThread tt = new TracingThread(vm, className);
 
-        // we construct the tracing thread first, to prevent 
-        // the static initializer from doing things we don't want;
+        // used to check this, but it seems more annoying now
+        // and it is not strictly needed to accomplish anything
 
         /*        java.util.List<ReferenceType> seek = vm.classesByName(className);
         if (seek.size() != 1) {

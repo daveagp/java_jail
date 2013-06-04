@@ -52,10 +52,13 @@ public class TracingThread extends Thread {
 
     private int MAX_STEPS = 256;
     private int steps = 0;
+
+    private String className;
     
-    TracingThread(VirtualMachine vm) {
+    TracingThread(VirtualMachine vm, String className) {
         super("event-handler");
         this.vm = vm;
+        this.className = className;
         mgr = vm.eventRequestManager();
         jdi2json = new JDI2JSON(vm,
                                 vm.process().getInputStream(),
@@ -132,7 +135,7 @@ public class TracingThread extends Thread {
         if (steps == 0) {
             // not the most elegant way to detect this, but the approaches
             // I tried led to classloaders running in the wrong places
-            System.out.println(JDI2JSON.error("Did not find: public static void main(String[])"));
+            System.out.println(JDI2JSON.error("Did not find: public static void "+className+".main(String[])"));
         }
         else {
             System.out.println(output.build().toString());
