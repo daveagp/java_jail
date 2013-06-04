@@ -1,0 +1,2 @@
+../../java/bin/javac -g -cp .:../javax.json-1.0.jar:../../java/lib/tools.jar *.java */*.java
+../../java/bin/java -cp .:../javax.json-1.0.jar:../../java/lib/tools.jar Trace cats.Bella

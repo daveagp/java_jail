@@ -1,0 +1,30 @@
+To compile trace:
+
+~/java_jail/java/bin/javac -cp /home/cscircles/java_jail/cp/trace:/home/cscircles/java_jail/cp/javax.json-1.0.jar:/home/cscircles/java_jail/java/lib/tools.jar ~/java_jail/cp/trace/*.java
+
+To compile and execute user code:
+
+~/dev/safeexec/safeexec --chroot_dir /home/cscircles/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 20 --fsize 10000 --exec /java/bin/javac -g -cp ".:./cats:/cp/trace:/cp/javax.json-1.0.jar:/java/lib/tools.jar" cats/Test.java
+
+~/dev/safeexec/safeexec --chroot_dir /home/cscircles/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 30 --exec /java/bin/java -cp ".:./cats:/cp/trace:/cp/javax.json-1.0.jar:/java/lib/tools.jar" Trace Vis
+
+What's in jail right now?
+ld-linux-x86-64.so.2  libdl.so.2  libjli.so  libm.so.6    libnss_compat.so.2  libnss_files.so.2  libpthread.so.0  librt.so.1
+libc.so.6             libjava.so  libjvm.so  libnsl.so.1  libnss_dns.so.2     libnss_nis.so.2    libresolv.so.2
+
+How to find what needs to go in the jail?
+- use strace
+- use ldd
+- install proc
+sudo mount -o bind /proc /chroot/proc
+(sudo umount /chroot/proc to unmount)
+- install dev (see python jail)
+
+Not sure why, but on 5/31/2013 after upgrading to java7, I had to 
+mount proc to get rid of a message about threads and one about libjli.so
+see: http://interreality.org/~reed/java-chroot.html
+
+I had to add 
+/sbin/iptables -I OUTPUT 1 -p tcp -d 127.0.0.1 --dport 32000:65535 -m owner --gid-owner 1000 -j ACCEPT
+because otherwise all debugger packets were being dropped.
+
