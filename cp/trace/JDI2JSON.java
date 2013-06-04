@@ -125,7 +125,7 @@ public class JDI2JSON {
         result.add("heap", heapDescription);
 
 	JsonObject this_ep = result.build();
-	if (!this_ep.equals(last_ep)) {
+	if (reallyChanged(last_ep, this_ep)) {
 	    results.add(this_ep);
 	    last_ep = this_ep;
 	}
@@ -185,12 +185,31 @@ public class JDI2JSON {
 	    return base_ep;
 	}
     }
-    
+
+    // issue: the frontend uses persistent frame ids but JDI doesn't provide them
+    // approach 1, trying to compute them, seems intractable (esp. w/ callbacks)
+    // approach 2, using an id based on stack depth, does not work w/ frontend
+    // approach 3, just give each frame at each execution point a unique id,
+    // is what we do. but we also want to skip animating e.p.'s where nothing changed,
+    // and if only the frame ids changed, we should treat it as if nothing changed
     private boolean reallyChanged(JsonObject old_ep, JsonObject new_ep) {
         if (old_ep == null) return true;
-        return !new_ep.equals(old_ep);
+        return !stripFrameIDs(new_ep).equals(stripFrameIDs(old_ep));
     }
-    
+
+    private JsonObject stripFrameIDs(JsonObject ep) {
+        JsonArrayBuilder result = Json.createArrayBuilder();
+        for (JsonValue frame : (JsonArray)(ep.get("stack_to_render"))) {
+                 result.add(jsonModifiedObject
+                            (jsonModifiedObject( (JsonObject)frame,
+                                                 "unique_hash", 
+                                                 jsonString("")),
+                             "frame_id",
+                             jsonInt(0)));
+             }
+        return jsonModifiedObject(ep, "stack_to_render", result.build());
+    }
+
     private JsonObjectBuilder convertFrame(StackFrame sf, boolean highlight, JsonValue returnValue) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         JsonArrayBuilder result_ordered = Json.createArrayBuilder();

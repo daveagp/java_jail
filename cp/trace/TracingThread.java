@@ -50,7 +50,7 @@ public class TracingThread extends Thread {
     
     JDI2JSON jdi2json;
 
-    private int MAX_STEPS = 200;
+    private int MAX_STEPS = 256;
     private int steps = 0;
     
     TracingThread(VirtualMachine vm) {
@@ -158,6 +158,9 @@ public class TracingThread extends Thread {
 			output.add(ep);
 			steps++;	  
 			if (steps == MAX_STEPS) {
+                            output.add(Json.createObjectBuilder()
+                                       .add("exception_msg", "<ran for maximum execution time limit>")
+                                       .add("event", "instruction_limit_reached"));
 			    vm.exit(0);
 			}
 		    }
