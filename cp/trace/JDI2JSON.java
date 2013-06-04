@@ -152,7 +152,9 @@ public class JDI2JSON {
     }
 
     private boolean showFramesInLocation(Location loc) {
-	return (!in_builtin_package(loc.toString()));
+	return (!in_builtin_package(loc.toString())
+                && !loc.method().name().contains("$"));
+        // skip synthetic accessor methods
     }
 
     private boolean showGuts(ReferenceType rt) {
@@ -279,7 +281,7 @@ public class JDI2JSON {
             result_ordered.add("__return__");
 	}        
 	return Json.createObjectBuilder()
-	    .add("func_name", sf.location().method().name())
+	    .add("func_name", sf.location().method().name()+":"+sf.location().lineNumber())
 	    .add("encoded_locals", result)
 	    .add("ordered_varnames", result_ordered)
 	    .add("parent_frame_id_list", Json.createArrayBuilder())
@@ -344,7 +346,9 @@ public class JDI2JSON {
                 // allFields: +inherited +hidden +repeated_synthetic
                 for (Map.Entry<Field,Value> me :  
                          obj.getValues(obj.referenceType().visibleFields()).entrySet()) {
-                    if (!me.getKey().isStatic())
+                    if (!me.getKey().isStatic()
+                        //&& !me.getKey().isSynthetic() // uncomment to hide synthetic fields (this$0 or val$lv)
+                        )
                         result.add(Json.createArrayBuilder()
                                        .add(me.getKey().name())
                                        .add(convertValue(me.getValue())));
