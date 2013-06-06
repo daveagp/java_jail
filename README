@@ -1,4 +1,4 @@
-java_jail: a chroot jail for java
+java_jail: chroot java jail, and JSON java trace printer
 David Pritchard (daveagp@gmail.com), created May 2013
 
 This is the backend for a Java version of Philip Guo's Python visualizer.
