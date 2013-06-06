@@ -1,6 +1,10 @@
 java_jail: a chroot jail for java
 David Pritchard (daveagp@gmail.com), created May 2013
 
+This is the backend for a Java version of Philip Guo's Python visualizer.
+Try it at: 
+      http://cscircles.cemc.uwaterloo.ca/java-visualize/
+
 This directory serves 2 purposes:
  -- . serves as chroot (changed root) for executing Java programs
  -- ./cp/traceprinter contains a Java program to print traces of Java

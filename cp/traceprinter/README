@@ -10,6 +10,9 @@ com.sun.tools.example.trace, written by Robert Field.
 http://www.docjar.com/docs/api/com/sun/tools/example/trace/package-index.html
 The traceprinter package was initially created from that package. 
 
+Try the visualizer this was built for: 
+      http://cscircles.cemc.uwaterloo.ca/java-visualize/
+
 == traceprinter.JSONTrace ==
 This is the main class. If you call
 
@@ -26,8 +29,6 @@ The output format is described here:
   https://github.com/pgbovine/OnlinePythonTutor/blob/master/v3/docs/opt-trace-format.md
 This allows us to use the javascript frontend from OnlinePythonTutor
 to visualize Java instead of Python. 
-See the Python visualizer at: http://pythontutor.com/visualize.html
-and the Java visualizer at: http://cscircles.cemc.uwaterloo.ca/java-visualize/
 
 See ./compile and ../../README for information on compiling and testing.
 
