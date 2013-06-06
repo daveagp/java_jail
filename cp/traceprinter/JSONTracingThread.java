@@ -1,3 +1,19 @@
+/*****************************************************************************
+
+traceprinter: a Java package to print traces of Java programs
+David Pritchard (daveagp@gmail.com), created May 2013
+
+The contents of this directory are released under the GNU Affero 
+General Public License, versions 3 or later. See LICENSE or visit:
+http://www.gnu.org/licenses/agpl.html
+
+See README for documentation on this package.
+
+This file was originally based on 
+com.sun.tools.example.trace.EventThread, written by Robert Field.
+
+******************************************************************************/
+
 package traceprinter;
 
 import com.sun.jdi.*;
@@ -10,7 +26,6 @@ import javax.json.*;
 
 /* 
  * Original author: Robert Field, see
- * http://www.docjar.com/src/api/com/sun/tools/example/trace/EventThread.java
  *
  * This version: David Pritchard (http://dave-pritchard.net)
  */

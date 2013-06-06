@@ -1,2 +1,39 @@
-../../java/bin/javac -g -cp .:../javax.json-1.0.jar:../../java/lib/tools.jar *.java */*.java
-../../java/bin/java -cp .:../javax.json-1.0.jar:../../java/lib/tools.jar Trace cats.Bella
+traceprinter: a Java package to print traces of Java programs
+David Pritchard (daveagp@gmail.com), created May 2013
+
+The contents of this directory are released under the GNU Affero 
+General Public License, versions 3 or later. See LICENSE or visit:
+http://www.gnu.org/licenses/agpl.html
+
+This project would not be possible without the package
+com.sun.tools.example.trace, written by Robert Field. 
+http://www.docjar.com/docs/api/com/sun/tools/example/trace/package-index.html
+The traceprinter package was initially created from that package. 
+
+== traceprinter.JSONTrace ==
+This is the main class. If you call
+
+"java traceprinter.JSONTrace ClassName"
+
+it will start up a debugger (tracer) JVM, then a debugee JVM, and
+output the full state of the variables and call stack as the program
+executes. It is necessary that the class being traced (ClassName)
+was compiled with the -g option.
+
+The class
+
+The output format is described here:
+  https://github.com/pgbovine/OnlinePythonTutor/blob/master/v3/docs/opt-trace-format.md
+This allows us to use the javascript frontend from OnlinePythonTutor
+to visualize Java instead of Python. 
+See the Python visualizer at: http://pythontutor.com/visualize.html
+and the Java visualizer at: http://cscircles.cemc.uwaterloo.ca/java-visualize/
+
+See ./compile and ../../README for information on compiling and testing.
+
+== traceprinter.JSONTracingThread ==
+This file detemines how to process events from the debugger VM. 
+
+== traceprinter.JDI2JSON ==
+This file takes JDI mirrors of the running process and converts them to
+JSON format.

@@ -1,3 +1,16 @@
+/*****************************************************************************
+
+traceprinter: a Java package to print traces of Java programs
+David Pritchard (daveagp@gmail.com), created May 2013
+
+The contents of this directory are released under the GNU Affero 
+General Public License, versions 3 or later. See LICENSE or visit:
+http://www.gnu.org/licenses/agpl.html
+
+See README for documentation on this package.
+
+******************************************************************************/
+
 package traceprinter;
 
 import java.util.*;

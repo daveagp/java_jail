@@ -1,8 +1,12 @@
+java_jail: a chroot jail for java
+David Pritchard (daveagp@gmail.com), created May 2013
+
 This directory serves 2 purposes:
  -- . serves as chroot (changed root) for executing Java programs
  -- ./cp/traceprinter contains a Java program to print traces of Java
     programs as they execute, printing the results to the same JSON
     format used by http://pythontutor.com/
+    See ./cp/traceprinter/README for documentation on that part.
 
 The significant code in this directory is the documentation, and the 
 contents of ./cp/traceprinter. Both are released under the GNU Affero 
@@ -25,50 +29,63 @@ contain these.
 For chroot jail to work, the full contents of this directory should be:
 
 ./java/: copy of unzipped java installation
-./{dev,proc}/: necessary pseudo-files
 ./{etc,lib64}/: necessary libraries
+./{dev,proc}/: necessary pseudo-files
 ./cp/: we use this to hold application-specific java classpath stuff
 ./scratch/: we use this to hold all user-generated files
 
 as well as README, LICENSE, and some .git files.
 
-The .git will only install ./cp/ . You have to add the other files yourself.
+Installation steps:
 
-For commands to compile and execute user code, see java_safe_maketrace.php
+(0) Unzip java to .java
+(1) You will need to copy some files from your system into ./lib64 --
+    see ./lib64/.gitignore for the list of what we use. If you end up
+    using more Java libraries, you might need to add more. We used
+    strace and ldd to figure out what to put there. You probably
+    can also just make a copy of all of /lib64 to ./lib64
+(2) Same as (1) with ./etc/ld.so.cache
+(3) You will need to mount /proc to ./proc -- use
+       sudo mount -o bind /proc /path/to/chroot/proc
+    (Or separately, run
+       mount --bind /proc /path/to/chroot/proc
+    to do this once, or to do it automatically on boot, add
+       /path/to/source/dir /path/to/mount/point none bind 0 0
+    to /etc/fstab)
+(4) Mount necessary devices to /dev
+      sudo /bin/mknod -m 0666 ./dev/null c 1 3
+      sudo /bin/mknod -m 0666 ./dev/random c 1 8
+      sudo /bin/mknod -m 0444 ./dev/urandom c 1 9
+(5) Go in to ./cp/traceprint and run "./compile" there.
+(6) File system permissions. At a basic level, it is enough to:
+    -- get rid of all write permissions except in ./scratch
+    -- allow everything to be read and executed by everyone
+    If you want to avoid simultaneous users conflicting with each other,
+    you will have to be more fine-grained in your use of ./scratch.
+(7) iptables considerations. If you are running arbitrary user code,
+    you probably want to prevent them from accessing the internet.
+    But, the JDI requires access to a local debugging port to
+    communicate between the tracing VM and the traced VM. On our system,
+    all sandboxed executions run in the "csc-sandboxed" group, so we have
+# to allow JDI:
+-A OUTPUT -p tcp -d 127.0.0.1 --dport 32000:65535 -m owner --gid-owner 1000 -j ACCEPT
+# to deny everything else:
+-A OUTPUT -m owner --gid-owner csc-sandboxed -j DROP
 
-What's in jail right now?
-ld-linux-x86-64.so.2  libdl.so.2  libjli.so  libm.so.6    libnss_compat.so.2  libnss_files.so.2  libpthread.so.0  librt.so.1
-libc.so.6             libjava.so  libjvm.so  libnsl.so.1  libnss_dns.so.2     libnss_nis.so.2    libresolv.so.2
+=== Testing ===
+Assuming you have CEMC safeexec (https://github.com/cemc/safeexec)
+installed, here is a way how to test whether things are installed correctly.
 
-How to find what needs to go in the jail?
-- use strace
-- use ldd
-- install proc
-sudo mount -o bind /proc /chroot/proc
-(sudo umount /chroot/proc to unmount)
-- install dev (see python jail)
-
-Not sure why, but on 5/31/2013 after upgrading to java7, I had to 
-mount proc to get rid of a message about threads and one about libjli.so
-see: http://interreality.org/~reed/java-chroot.html
-
-Short-term fix: run
-  mount --bind /proc /path/to/chroot/proc
-
-Long-term fix: add to /etc/fstab
-  /path/to/source/dir /path/to/mount/point none bind 0 0
-
-
-Also: I had to add 
-/sbin/iptables -I OUTPUT 1 -p tcp -d 127.0.0.1 --dport 32000:65535 -m owner --gid-owner 1000 -j ACCEPT
-because otherwise all debugger packets were being dropped.
+(0) Write some java class Test in ./scratch/Test.java
+(1) Compile it (numbers work for me but might need to be changed):
+/path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 20 --fsize 10000 --exec /java/bin/javac -g Test.java
+    Note: using -g is necessary for tracing.
+(2) Trace it:
+/path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 30 --exec /java/bin/java -cp "/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar" traceprinter.JSONTrace Test
 
 ===
-TODO
-===
-intervening stack frames should be shown as dots
-<void> -> void
-None -> null
-True, False -> true, false
-list -> array
-options for visualizing synthetics
+
+I found these links useful at some point:
+http://www.cyberciti.biz/faq/howto-run-nginx-in-a-chroot-jail/
+http://interreality.org/~reed/java-chroot.html
+
