@@ -32,6 +32,8 @@ For chroot jail to work, the full contents of this directory should be:
 
 as well as README, LICENSE, and some .git files.
 
+The .git will only install ./cp/ . You have to add the other files yourself.
+
 For commands to compile and execute user code, see java_safe_maketrace.php
 
 What's in jail right now?
