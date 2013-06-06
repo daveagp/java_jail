@@ -28,3 +28,12 @@ I had to add
 /sbin/iptables -I OUTPUT 1 -p tcp -d 127.0.0.1 --dport 32000:65535 -m owner --gid-owner 1000 -j ACCEPT
 because otherwise all debugger packets were being dropped.
 
+===
+TODO
+===
+intervening stack frames should be shown as dots
+<void> -> void
+None -> null
+True, False -> true, false
+list -> array
+options for visualizing synthetics
