@@ -1,8 +1,8 @@
 *~
 *.class
-java
-proc
-dev
-etc
-lib64
-scratch
+java/*
+proc/*
+dev/*
+etc/*
+lib64/*
+scratch/*

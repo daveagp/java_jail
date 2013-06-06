@@ -1,12 +1,38 @@
-To compile trace:
+This directory serves 2 purposes:
+ -- . serves as chroot (changed root) for executing Java programs
+ -- ./cp/traceprinter contains a Java program to print traces of Java
+    programs as they execute, printing the results to the same JSON
+    format used by http://pythontutor.com/
 
-~/java_jail/java/bin/javac -cp /home/cscircles/java_jail/cp/trace:/home/cscircles/java_jail/cp/javax.json-1.0.jar:/home/cscircles/java_jail/java/lib/tools.jar ~/java_jail/cp/trace/*.java
+The significant code in this directory is the documentation, and the 
+contents of ./cp/traceprinter. Both are released under the GNU Affero 
+General Public License, versions 3 or later. See LICENSE or visit:
+http://www.gnu.org/licenses/agpl.html
 
-To compile and execute user code:
+This project would not be possible without the package
+com.sun.tools.example.trace, written by Robert Field. The traceprinter 
+package was initially created from that package.
 
-~/dev/safeexec/safeexec --chroot_dir /home/cscircles/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 20 --fsize 10000 --exec /java/bin/javac -g -cp ".:./cats:/cp/trace:/cp/javax.json-1.0.jar:/java/lib/tools.jar" cats/Test.java
+=== Setting up a chroot jail for java ===
 
-~/dev/safeexec/safeexec --chroot_dir /home/cscircles/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 30 --exec /java/bin/java -cp ".:./cats:/cp/trace:/cp/javax.json-1.0.jar:/java/lib/tools.jar" Trace Vis
+The good news is that java for linux is available as a single self-contained
+archive (we used jdk-7u21-linux-x64.gz). 
+
+The bad news is that it also uses various shared object files not contained
+in there, as well as various pseudo-files. So the chroot jail must also
+contain these.
+
+For chroot jail to work, the full contents of this directory should be:
+
+./java/: copy of unzipped java installation
+./{dev,proc}/: necessary pseudo-files
+./{etc,lib64}/: necessary libraries
+./cp/: we use this to hold application-specific java classpath stuff
+./scratch/: we use this to hold all user-generated files
+
+as well as README, LICENSE, and some .git files.
+
+For commands to compile and execute user code, see java_safe_maketrace.php
 
 What's in jail right now?
 ld-linux-x86-64.so.2  libdl.so.2  libjli.so  libm.so.6    libnss_compat.so.2  libnss_files.so.2  libpthread.so.0  librt.so.1

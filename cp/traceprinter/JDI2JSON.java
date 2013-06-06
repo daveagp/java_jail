@@ -1,3 +1,5 @@
+package traceprinter;
+
 import java.util.*;
 import com.sun.jdi.*;
 import com.sun.jdi.request.*;

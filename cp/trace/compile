@@ -1,1 +1,0 @@
-~/java_jail/java/bin/javac -cp /home/cscircles/java_jail/cp/trace:/home/cscircles/java_jail/cp/javax.json-1.0.jar:/home/cscircles/java_jail/java/lib/tools.jar ~/java_jail/cp/trace/*.java

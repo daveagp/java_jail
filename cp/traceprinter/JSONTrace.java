@@ -1,27 +1,24 @@
+package traceprinter;
+
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
 
-public class Trace {
-    public static void main(String[] args) {
-	try {
-	    new Trace(args[0]);
-	}
-	catch (SorryDaveICantDoThat e) {}
-    }
+public class JSONTrace {
 
-    class SorryDaveICantDoThat extends Exception {
-	SorryDaveICantDoThat(String msg) {super(msg);}
+    public static void main(String[] args) {
+        new JSONTrace(args[0]);
     }
 
     // same as "java command": calls main
     // seems to fail silently if there is no main with the right signature 
-    Trace(String className) throws SorryDaveICantDoThat {
+    JSONTrace(String className) { 
 
         VirtualMachine vm = launchVM(className);	    
         vm.setDebugTraceMode(0);
-        TracingThread tt = new TracingThread(vm, className);
+        JSONTracingThread tt = new JSONTracingThread(vm, className);
 
-        // used to check this, but it seems more annoying now
+        // used to check this, but it seems difficult to get it to work
+        // correctly (c.f. printing in static initializer)
         // and it is not strictly needed to accomplish anything
 
         /*        java.util.List<ReferenceType> seek = vm.classesByName(className);
