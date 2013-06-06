@@ -24,7 +24,14 @@ Not sure why, but on 5/31/2013 after upgrading to java7, I had to
 mount proc to get rid of a message about threads and one about libjli.so
 see: http://interreality.org/~reed/java-chroot.html
 
-I had to add 
+Short-term fix: run
+  mount --bind /proc /path/to/chroot/proc
+
+Long-term fix: add to /etc/fstab
+  /path/to/source/dir /path/to/mount/point none bind 0 0
+
+
+Also: I had to add 
 /sbin/iptables -I OUTPUT 1 -p tcp -d 127.0.0.1 --dport 32000:65535 -m owner --gid-owner 1000 -j ACCEPT
 because otherwise all debugger packets were being dropped.
 
