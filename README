@@ -51,13 +51,8 @@ Installation steps:
     strace and ldd to figure out what to put there. You probably
     can also just make a copy of all of /lib64 to ./lib64
 (3) Same as (1) with ./etc/ld.so.cache
-(4) You will need to mount /proc to ./proc -- use
-       sudo mount -o bind /proc /path/to/chroot/proc
-    (Or separately, run
-       mount --bind /proc /path/to/chroot/proc
-    to do this once, or to do it automatically on boot, add
-       /path/to/source/dir /path/to/mount/point none bind 0 0
-    to /etc/fstab)
+(4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
+      sudo mount -o bind /proc /path/to/chroot/proc
 (5) Mount necessary devices to /dev
       sudo /bin/mknod -m 0666 ./dev/null c 1 3
       sudo /bin/mknod -m 0666 ./dev/random c 1 8
