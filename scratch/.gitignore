@@ -1,0 +1,3 @@
+# don't copy scratch, but keep this .gitignore and the directory
+*
+!.gitignore
