@@ -6,3 +6,5 @@ list -> array
 options for visualizing synthetics
 custom visualizations of Integer, Stack<>, ... ?
 global -> static
+multiple error round -> multiple highlited lines
+"back" yields error message
