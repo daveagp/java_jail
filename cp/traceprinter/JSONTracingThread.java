@@ -44,6 +44,7 @@ public class JSONTracingThread extends Thread {
 
     private int MAX_STEPS = 256;
     private int steps = 0;
+    private int MAX_STACK_SIZE = 16;
 
     private String usercode;
 
@@ -175,6 +176,14 @@ public class JSONTracingThread extends Thread {
                     for (JsonObject ep : jdi2json.convertExecutionPoint(event, loc, theThread)) {
 			output.add(ep);
 			steps++;	  
+                        int stackSize = ((JsonArray)ep.get("stack_to_render")).size();
+
+                        if (stackSize >= MAX_STACK_SIZE) {
+                            output.add(Json.createObjectBuilder()
+                                       .add("exception_msg", "<exceeded maximum visualizer stack size>")
+                                       .add("event", "instruction_limit_reached"));
+			    vm.exit(0);
+                        }
 			if (steps == MAX_STEPS) {
                             output.add(Json.createObjectBuilder()
                                        .add("exception_msg", "<ran for maximum execution time limit>")
