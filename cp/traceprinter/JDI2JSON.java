@@ -157,7 +157,7 @@ public class JDI2JSON {
 	return results;
     }
     
-    private String[] builtin_packages = {"java", "javax", "sun", "com.sun"};
+    private String[] builtin_packages = {"java", "javax", "sun", "com.sun", "traceprinter"};
 
     private boolean in_builtin_package(String S) {
         for (String badPrefix: builtin_packages)
@@ -397,37 +397,47 @@ public class JDI2JSON {
         }
     }
 
-    static String error(String message) {
-	return 
+    static JsonObject compileErrorOutput(String usercode, String errmsg, long row, long col) {
+	return output(usercode,
 	    Json.createArrayBuilder().add
 	    (Json.createObjectBuilder()
-	     .add("line", "1")
+	     .add("line", ""+row)
 	     .add("event", "uncaught_exception")
-	     .add("offset", "1")
-	     .add("exception_msg", message))
-	    .build().toString();
+	     .add("offset", ""+col)
+	     .add("exception_msg", errmsg))
+                      .build()
+                      );
+    }
+
+    static JsonObject output(String usercode, JsonArray trace) {
+        return Json.createObjectBuilder()
+            .add("code", usercode)
+            .add("trace", trace).build();
     }
 
     String exceptionMessage(ExceptionEvent event) {
         String msg = "";
         try {
-            msg += "a";
             ObjectReference exc = event.exception();
+            msg = exc.toString();
             ReferenceType excType = exc.referenceType();
-            msg += "x";
-            StringReference m = (StringReference)
-                event.exception().invokeMethod(event.thread(), 
-                                               excType.methodsByName("toString").get(0),
-                                               new ArrayList<Value>(),
-                                               0);
-            msg += "c";
-            return m.value();
+            //for (Field ff : excType.allFields())
+            //  System.out.println(ff);
+            ThreadReference t = event.thread();
+            //            System.out.println(t);
+            //Method mm = excType.methodsByName("getMessage").get(0);
+            //System.out.println(mm);
+            Field ff = excType.fieldByName("detailMessage");
+            StringReference sr = (StringReference) exc.getValue(ff);
+            //System.out.println(sr);
+            return excType.name()+": "+sr.value();
             //System.out.println("type: "+event.exception().type());
             //System.out.println("message: "+msg);
         }
         catch (Exception e) {
+            System.out.println(e);
+            e.printStackTrace();
             return msg + "fail dynamic message lookup";
-            //e.printStackTrace();
         }
     }
 

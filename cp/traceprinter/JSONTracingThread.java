@@ -38,19 +38,26 @@ public class JSONTracingThread extends Thread {
     private boolean connected = true;  // Connected to VM
     private boolean vmDied = true;     // VMDeath occurred
     
-    EventRequestManager mgr; 
+    private EventRequestManager mgr; 
     
-    JDI2JSON jdi2json;
+    private JDI2JSON jdi2json;
 
     private int MAX_STEPS = 256;
     private int steps = 0;
 
-    private String className;
+    private String usercode;
+
+    private InMemory im;
+
+    private VMCommander vmc;
     
-    JSONTracingThread(VirtualMachine vm, String className) {
+    private JsonArrayBuilder output = Json.createArrayBuilder();
+
+    JSONTracingThread(InMemory im) {
         super("event-handler");
-        this.vm = vm;
-        this.className = className;
+        this.vm = im.vm;
+        this.im = im;
+        this.usercode = im.usercode;
         mgr = vm.eventRequestManager();
         jdi2json = new JDI2JSON(vm,
                                 vm.process().getInputStream(),
@@ -87,8 +94,6 @@ public class JSONTracingThread extends Thread {
         cpr.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         cpr.enable();
     }
-
-    JsonArrayBuilder output = Json.createArrayBuilder();
     
     @Override
     public void run() {
@@ -98,6 +103,7 @@ public class JSONTracingThread extends Thread {
             try {
                 final EventSet eventSet = queue.remove();
                 for (Event ev : new Iterable<Event>(){public Iterator<Event> iterator(){return eventSet.eventIterator();}}) {
+                    //System.out.println("in run: " + steps+" "+ev);
                     handleEvent(ev);
                     if (request != null && request.isEnabled()) {
                         request.disable();
@@ -107,7 +113,10 @@ public class JSONTracingThread extends Thread {
                         request = null;
                     }
                     if (ev instanceof LocatableEvent && 
-                        jdi2json.reportEventsAtLocation(((LocatableEvent)ev).location())) {
+                        jdi2json.reportEventsAtLocation(((LocatableEvent)ev).location())
+                        || 
+                        (ev.toString().contains("NoopMain")))
+                        {
                         request = mgr.
                             createStepRequest(((LocatableEvent)ev).thread(),
                                               StepRequest.STEP_MIN,
@@ -118,25 +127,24 @@ public class JSONTracingThread extends Thread {
                 }
                 eventSet.resume();
             } catch (InterruptedException exc) {
+                exc.printStackTrace();
                 // Ignore
             } catch (VMDisconnectedException discExc) {
                 handleDisconnectedException();
                 break;
             }
         }
-        if (steps == 0) {
-            // not the most elegant way to detect this, but the approaches
-            // I tried led to classloaders running in the wrong places
-            System.out.println(JDI2JSON.error("Did not find: public static void "+className+".main(String[])"));
+        if (vmc.success == false) {
+            System.out.print(JDI2JSON.compileErrorOutput(usercode, vmc.errorMessage, 1, 1));
         }
         else {
-            System.out.println(output.build().toString());
+            System.out.print(JDI2JSON.output(usercode, output.build()));
         }
     }
 
     ThreadReference theThread = null;
         
-    private void handleEvent(Event event) {
+    private Thread handleEvent(Event event) {
         if (event instanceof ClassPrepareEvent) {
             classPrepareEvent((ClassPrepareEvent)event);
         } else if (event instanceof VMDeathEvent) {
@@ -146,6 +154,7 @@ public class JSONTracingThread extends Thread {
         } 
         
         if (event instanceof LocatableEvent) {
+            //System.out.println("in handle subloop: " + steps+" "+event);
             if (theThread == null)
                 theThread = ((LocatableEvent)event).thread();
             else {
@@ -153,9 +162,17 @@ public class JSONTracingThread extends Thread {
                     throw new RuntimeException("Assumes one thread!");
             }
             Location loc = ((LocatableEvent)event).location();
+            try {
+                if (loc.sourceName().equals("NoopMain.java") && steps == 0) {
+                    steps++;
+                    vmc = new VMCommander(im, theThread);
+                    vmc.start();
+                }
+            } catch (AbsentInformationException e) {}
+
             if (steps < MAX_STEPS && jdi2json.reportEventsAtLocation(loc)) {
 		try {
-		    for (JsonObject ep : jdi2json.convertExecutionPoint(event, loc, theThread)) {
+                    for (JsonObject ep : jdi2json.convertExecutionPoint(event, loc, theThread)) {
 			output.add(ep);
 			steps++;	  
 			if (steps == MAX_STEPS) {
@@ -171,6 +188,7 @@ public class JSONTracingThread extends Thread {
 		}
             }
         }
+        return null;
     }
     
     /***
@@ -203,8 +221,12 @@ public class JSONTracingThread extends Thread {
     private void classPrepareEvent(ClassPrepareEvent event)  {
         //System.out.println("CPE!");
         ReferenceType rt = event.referenceType();
-	//	System.out.println(rt.toString());
-        jdi2json.staticListable.add(rt);
+        if (!rt.name().startsWith("traceprinter."))
+            jdi2json.staticListable.add(rt);
+
+        if (rt.name().startsWith("traceprinter") && !rt.name().equals("traceprinter.shoelace.NoopMain"))
+            return;
+        //System.out.println(rt.name());
         try {
             for (Location loc : rt.allLineLocations()) {
                 BreakpointRequest br = mgr.createBreakpointRequest(loc);

@@ -36,7 +36,6 @@ For chroot jail to work, the full contents of this directory should be:
 ./{etc,lib64}/: necessary libraries
 ./{dev,proc}/: necessary pseudo-files
 ./cp/: we use this to hold application-specific java classpath stuff
-./scratch/: we use this to hold all user-generated files
 
 as well as README, LICENSE, and some .git files.
 
@@ -58,11 +57,8 @@ Installation steps:
       sudo /bin/mknod -m 0666 ./dev/random c 1 8
       sudo /bin/mknod -m 0444 ./dev/urandom c 1 9
 (6) Go in to ./cp/traceprint and run "./compile" there.
-(7) File system permissions. At a basic level, it is enough to:
-    -- get rid of all write permissions except in ./scratch
-    -- allow everything to be read and executed by everyone
-    If you want to avoid simultaneous users conflicting with each other,
-    you will have to be more fine-grained in your use of ./scratch.
+(7) File system permissions. At a basic level, it is enough to
+    allow everything to be read and executed by everyone, and written by nobody.
 (8) iptables considerations. If you are running arbitrary user code,
     you probably want to prevent them from accessing the internet.
     But, the JDI requires access to a local debugging port to
@@ -78,16 +74,12 @@ Installation steps:
 Assuming you have CEMC safeexec (https://github.com/cemc/safeexec)
 installed, here is a way how to test whether things are installed correctly.
 
-(0) Write some java class Test in ./scratch/Test.java
-(1) Compile it (numbers work for me but might need to be changed):
-/path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 20 --fsize 10000 --exec /java/bin/javac -g Test.java
-    Note: using -g is necessary for tracing.
-(2) Trace it:
-/path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir /scratch --nproc 50 --mem 3000000 --nfile 30 --exec /java/bin/java -cp "/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar" traceprinter.JSONTrace Test
+(0) Write some java class Test somewhere, Test.java. 
+(1) Trace it:
+/path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < Test.java
 
 ===
 
 I found these links useful at some point:
 http://www.cyberciti.biz/faq/howto-run-nginx-in-a-chroot-jail/
 http://interreality.org/~reed/java-chroot.html
-
