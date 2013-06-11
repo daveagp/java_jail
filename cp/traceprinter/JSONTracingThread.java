@@ -44,7 +44,7 @@ public class JSONTracingThread extends Thread {
 
     private int MAX_STEPS = 256;
     private int steps = 0;
-    private int MAX_STACK_SIZE = 16;
+    private int MAX_STACK_SIZE = 10;
 
     private String usercode;
 
