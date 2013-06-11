@@ -51,11 +51,15 @@ Installation steps:
     can also just make a copy of all of /lib64 to ./lib64
 (3) Same as (1) with ./etc/ld.so.cache
 (4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
-      sudo mount -o bind /proc /path/to/chroot/proc
+      EITHER:
+      To mount once (until reboot or "umount /path/to/chroot/proc")
+        sudo mount --bind -o ro,bind /proc /path/to/chroot/proc
+      To mount permanently, copy this line from /etc/mtab to /etc/fstab
+        /proc  /path/to/chroot/proc  none  ro,bind  0  0
 (5) Mount necessary devices to /dev
-      sudo /bin/mknod -m 0666 ./dev/null c 1 3
-      sudo /bin/mknod -m 0666 ./dev/random c 1 8
-      sudo /bin/mknod -m 0444 ./dev/urandom c 1 9
+        sudo mknod -m 0666 ./dev/null c 1 3
+        sudo mknod -m 0666 ./dev/random c 1 8
+        sudo mknod -m 0444 ./dev/urandom c 1 9
 (6) Go in to ./cp/traceprint and run "./compile" there.
 (7) File system permissions. At a basic level, it is enough to
     allow everything to be read and executed by everyone, and written by nobody.
