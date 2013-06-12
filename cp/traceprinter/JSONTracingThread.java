@@ -135,11 +135,19 @@ public class JSONTracingThread extends Thread {
                 break;
             }
         }
+        String outputString;
         if (vmc.success == false) {
-            System.out.print(JDI2JSON.compileErrorOutput(usercode, vmc.errorMessage, 1, 1));
+            outputString = JDI2JSON.compileErrorOutput(usercode, vmc.errorMessage, 1, 1).toString();
         }
         else {
-            System.out.print(JDI2JSON.output(usercode, output.build()));
+            outputString = JDI2JSON.output(usercode, output.build()).toString();
+        }
+
+        try { 
+            PrintStream out = new PrintStream(System.out, true, "UTF-8");
+            out.print(outputString);
+        } catch (UnsupportedEncodingException e) {
+            System.out.print(outputString);
         }
     }
 

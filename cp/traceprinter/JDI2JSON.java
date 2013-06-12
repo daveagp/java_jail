@@ -108,11 +108,20 @@ public class JDI2JSON {
         }
                         
         JsonArrayBuilder frames = Json.createArrayBuilder();
+        StackFrame lastNonUserFrame = null;
         try {
 	    boolean firstFrame = true;
             for (StackFrame sf : t.frames()) {
-                if (!showFramesInLocation(sf.location()))
+                if (!showFramesInLocation(sf.location())) {
+                    lastNonUserFrame = sf;
                     continue;
+                }
+
+                if (lastNonUserFrame != null) {
+                    frame_ticker++;
+                    frames.add(convertFrameStub(lastNonUserFrame));
+                    lastNonUserFrame = null;
+                }
                 frame_ticker++;
                 frames.add(convertFrame(sf, firstFrame, returnValue));
 		firstFrame = false;
@@ -307,7 +316,22 @@ public class JDI2JSON {
 	    .add("frame_id", frame_ticker);//frame_stack.get(level));
     }
     
-   void convertHeap(JsonObjectBuilder result) {
+    // used to show a single non-user frame when there is
+    // non-user code running between two user frames
+    private JsonObjectBuilder convertFrameStub(StackFrame sf) {
+        return Json.createObjectBuilder()
+            .add("func_name", "\u22EE\n"+sf.location().declaringType().name()+"."+sf.location().method().name())
+            .add("encoded_locals", Json.createObjectBuilder())//.add("...", "..."))
+            .add("ordered_varnames", Json.createArrayBuilder())//.add("..."))
+            .add("parent_frame_id_list", Json.createArrayBuilder())
+	    .add("is_highlighted", false)//frame_stack.size()-1)
+	    .add("is_zombie", false)
+	    .add("is_parent", false)
+	    .add("unique_hash", ""+frame_ticker)//frame_stack.get(level))
+	    .add("frame_id", frame_ticker);//frame_stack.get(level));
+    }
+    
+    void convertHeap(JsonObjectBuilder result) {
         heap_done = new java.util.TreeSet<>();
         while (!heap.isEmpty()) {
             Map.Entry<Long, ObjectReference> first = heap.firstEntry();
