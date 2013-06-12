@@ -1,4 +1,3 @@
-intervening stack frames should be shown as dots
 "<void>" -> void
 None -> null
 True, False -> true, false
