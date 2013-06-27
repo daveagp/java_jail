@@ -12,3 +12,4 @@ return statement: show next line
 show call statement
 output box should not jump
 reflow visualizer parts
+resizing needs to also change text output width
