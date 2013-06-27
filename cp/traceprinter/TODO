@@ -6,4 +6,9 @@ options for visualizing synthetics
 custom visualizations of Integer, Stack<>, ... ?
 global -> static
 allow visualizing two frames at a time?
-holding down left/right arrow should work
+if curr loc = prev loc, the wrong style gets precedence
+progressive labels
+return statement: show next line
+show call statement
+output box should not jump
+reflow visualizer parts
