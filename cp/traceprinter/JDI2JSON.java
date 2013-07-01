@@ -412,7 +412,7 @@ public class JDI2JSON {
         else if (v instanceof DoubleValue) return jsonReal(((DoubleValue)v).value());
         else if (v instanceof CharValue) return jsonString(((CharValue)v).value()+"");
         else if (v instanceof VoidValue) 
-            return jsonString("<VOID>");
+            return Json.createArrayBuilder().add("PRIMITIVE").add("void").build();
         else if (!(v instanceof ObjectReference)) return JsonValue.NULL; //not a hack
         else {
 	    ObjectReference obj = (ObjectReference)v;

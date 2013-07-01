@@ -1,10 +1,5 @@
-"<void>" -> void
-None -> null
-True, False -> true, false
-list -> array
-options for visualizing synthetics
+options for visualizing synthetics?
 custom visualizations of Integer, Stack<>, ... ?
-global -> static
 allow visualizing two frames at a time?
 if curr loc = prev loc, the wrong style gets precedence
 progressive labels
@@ -12,4 +7,3 @@ return statement: show next line
 show call statement
 output box should not jump
 reflow visualizer parts
-resizing needs to also change text output width

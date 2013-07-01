@@ -35,6 +35,14 @@ public class InMemory {
     Map<String, byte[]> bytecode;
 
     public static void main(String[] args) {
+
+        // just a sanity check, can the debugger VM see this NoopMain?
+        traceprinter.shoelace.NoopMain.main(null); 
+        // however, the debuggee might or might not be able to.
+        // use the CLASSPATH environment variable so that it includes
+        // the parent directory of traceprinter; using -cp does not
+        // reliably pass on to the debuggee.
+
         try {
             StringBuilder usercodeBuilder = new StringBuilder();
             BufferedReader br = 
