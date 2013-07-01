@@ -15,7 +15,7 @@ Try the visualizer this was built for:
       http://cscircles.cemc.uwaterloo.ca/java_visualize/
 
 == traceprinter.ramtools ==
-CompileInMemory : the main class
+CompileToBytes : the main class
 RAMJavaFile : simulates a java source code file (.java)
 RAMClassFile : simulates a compiled java class file (.class)
 RAMClassFileManager : collection of RAMClassFiles

@@ -5,7 +5,7 @@ import java.lang.reflect.*;
 /***
 This class receives commands from traceprinter.VMCommander
 telling what user code should be run. (Note that VMCommander
-is in the dubgger JVM, and VMCommandee is in the debugee.)
+is in the debugger JVM, and VMCommandee is in the debugee.)
 ***/
 
 public class VMCommandee {
