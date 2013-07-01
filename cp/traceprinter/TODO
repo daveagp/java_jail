@@ -1,9 +1,6 @@
-options for visualizing synthetics?
-custom visualizations of Integer, Stack<>, ... ?
-allow visualizing two frames at a time?
-if curr loc = prev loc, the wrong style gets precedence
-progressive labels
-return statement: show next line
-show call statement
 output box should not jump
-reflow visualizer parts
+call and return statements consistent with prev/curr line
+progressive Python labels: "Frames" only if more than one, "Objects" only if any, "Global" in variables only if function calls
+custom visualizations of Integer, Stack<>, ... ?
+options for visualizing synthetics?
+allow to reflow visualizer parts (already partly done?)
