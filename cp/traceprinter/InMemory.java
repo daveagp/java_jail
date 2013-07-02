@@ -150,7 +150,6 @@ http://docs.oracle.com/javase/7/docs/jdk/api/jpda/jdi/com/sun/jdi/connect/Connec
             // variable would be inherited, but the -cp command-line option would not.
             // note that -cp overrides CLASSPATH.
 
-            System.out.println(System.getProperty("java.class.path"));
             ((Connector.Argument)(args.get("options"))).setValue("-cp " + System.getProperty("java.class.path"));
             
             //	    System.out.println("About to call LaunchingConnector.launch...");
