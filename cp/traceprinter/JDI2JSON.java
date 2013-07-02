@@ -440,28 +440,41 @@ public class JDI2JSON {
     }
 
     String exceptionMessage(ExceptionEvent event) {
-        String msg = "";
+        ObjectReference exc = event.exception();
+        ReferenceType excType = exc.referenceType();
         try {
-            ObjectReference exc = event.exception();
-            msg = exc.toString();
-            ReferenceType excType = exc.referenceType();
-            //for (Field ff : excType.allFields())
-            //  System.out.println(ff);
-            ThreadReference t = event.thread();
-            //            System.out.println(t);
-            //Method mm = excType.methodsByName("getMessage").get(0);
-            //System.out.println(mm);
-            Field ff = excType.fieldByName("detailMessage");
-            StringReference sr = (StringReference) exc.getValue(ff);
-            //System.out.println(sr);
-            return excType.name()+": "+sr.value();
-            //System.out.println("type: "+event.exception().type());
-            //System.out.println("message: "+msg);
+            // this is the logical approach, but gives "Unexpected JDWP Error: 502" in invokeMethod
+            // even if we suspend-and-resume the thread t
+            /*ThreadReference t = event.thread();
+            Method mm = excType.methodsByName("getMessage").get(0);
+            t.suspend();
+            Value v = exc.invokeMethod(t, mm, new ArrayList<Value>(), 0);
+            t.resume();
+            StringReference sr = (StringReference) v;
+            String detail = sr.value();*/
+
+            // so instead we just look for the longest detailMessage
+            String detail = "";
+            for (Field ff: excType.allFields())
+                if (ff.name().equals("detailMessage")) {
+                    StringReference sr = (StringReference) exc.getValue(ff);
+                    String thisMsg = sr == null ? null : sr.value();
+                    if (thisMsg != null && thisMsg.length() > detail.length())
+                        detail = thisMsg;
+                }
+
+            if (detail.equals(""))
+                return excType.name(); // NullPointerException has no detail msg
+            
+            return excType.name()+": "+detail;
         }
         catch (Exception e) {
+            System.out.println("Failed to convert exception");
             System.out.println(e);
-            e.printStackTrace();
-            return msg + "fail dynamic message lookup";
+            e.printStackTrace(System.out);
+            for (Field ff : excType.visibleFields())
+                System.out.println(ff);
+            return "fail dynamic message lookup";
         }
     }
 
