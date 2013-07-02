@@ -44,7 +44,7 @@ public class JSONTracingThread extends Thread {
 
     private int MAX_STEPS = 256;
     private int steps = 0;
-    private int MAX_STACK_SIZE = 10;
+    private int MAX_STACK_SIZE = 16;
 
     private String usercode;
 
@@ -135,12 +135,26 @@ public class JSONTracingThread extends Thread {
                 break;
             }
         }
-        String outputString;
-        if (vmc.success == false) {
-            outputString = JDI2JSON.compileErrorOutput(usercode, vmc.errorMessage, 1, 1).toString();
+        String outputString = null;
+        try {
+            if (vmc == null) {
+                outputString = JDI2JSON.compileErrorOutput(usercode, "Internal error: there was an error starting the debuggee VM.", 0, 0).toString();
+            }
+            else {
+                vmc.join();
+                if (vmc.success == null) {
+                    outputString = JDI2JSON.compileErrorOutput(usercode, "Success is null?", 0, 0).toString();
+                }
+                else if (vmc.success == false) {
+                    outputString = JDI2JSON.compileErrorOutput(usercode, vmc.errorMessage, 1, 1).toString();
+                }
+                else {
+                    outputString = JDI2JSON.output(usercode, output.build()).toString();
+                }
+            }
         }
-        else {
-            outputString = JDI2JSON.output(usercode, output.build()).toString();
+        catch (Exception e) {
+            e.printStackTrace(System.out);
         }
 
         try { 
@@ -188,13 +202,13 @@ public class JSONTracingThread extends Thread {
 
                         if (stackSize >= MAX_STACK_SIZE) {
                             output.add(Json.createObjectBuilder()
-                                       .add("exception_msg", "<exceeded maximum visualizer stack size>")
+                                       .add("exception_msg", "<exceeded max visualizer stack size>")
                                        .add("event", "instruction_limit_reached"));
 			    vm.exit(0);
                         }
 			if (steps == MAX_STEPS) {
                             output.add(Json.createObjectBuilder()
-                                       .add("exception_msg", "<ran for maximum execution time limit>")
+                                       .add("exception_msg", "<exceeded max visualizer step limit>")
                                        .add("event", "instruction_limit_reached"));
 			    vm.exit(0);
 			}
