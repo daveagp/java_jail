@@ -119,18 +119,41 @@ public class InMemory {
     VirtualMachine launchVM(String className) {
         LaunchingConnector connector = theCommandLineLaunchConnector();
         try {
+
             java.util.Map<String, Connector.Argument> args 
                 = connector.defaultArguments();
+
+            /* what are the other options? on my system,
+
+            for (java.util.Map.Entry<String, Connector.Argument> arg: args.entrySet()) {
+                System.out.print(arg.getKey()+" ");
+                System.out.print("["+arg.getValue().value()+"]: ");
+                System.out.println(arg.getValue().description());
+            }
+            
+            prints out:
+
+home [/java/jre]: Home directory of the SDK or runtime environment used to launch the application
+options []: Launched VM options
+main []: Main class and arguments, or if -jar is an option, the main jar file and arguments
+suspend [true]: All threads will be suspended before execution of main
+quote ["]: Character used to combine space-delimited text into a single command line argument
+vmexec [java]: Name of the Java VM launcher
+
+            For more info, see
+http://docs.oracle.com/javase/7/docs/jdk/api/jpda/jdi/com/sun/jdi/connect/Connector.Argument.html
+            */
+            
             ((Connector.Argument)(args.get("main"))).setValue(className);
-	    	    {
-    /*		for (java.util.Map.Entry<String, Connector.Argument> arg: args.entrySet()) {
-                    System.out.println(arg.getKey());
-                    System.out.println("["+arg.getValue().value()+"]");
-                    System.out.println(arg.getValue().description());
-                    System.out.println(arg.getValue().isValid(arg.getValue().value()));
-                    }*/
-		}
-                    //	    System.out.println("About to call LaunchingConnector.launch...");
+            
+            // inherit the classpath. if it were not for this, the CLASSPATH environment
+            // variable would be inherited, but the -cp command-line option would not.
+            // note that -cp overrides CLASSPATH.
+
+            System.out.println(System.getProperty("java.class.path"));
+            ((Connector.Argument)(args.get("options"))).setValue("-cp " + System.getProperty("java.class.path"));
+            
+            //	    System.out.println("About to call LaunchingConnector.launch...");
 	    VirtualMachine result = connector.launch(args);
 	    //System.out.println("...done");
             return result;
