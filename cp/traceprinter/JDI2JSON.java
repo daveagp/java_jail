@@ -58,10 +58,17 @@ public class JDI2JSON {
 
     public List<ReferenceType> staticListable = new ArrayList<>();
 
+    public static StringBuilder userlogged;
+
     public JDI2JSON(VirtualMachine vm, InputStream vm_stdout, InputStream vm_stderr) {
         stdout = new InputPuller(vm_stdout);
         stderr = new InputPuller(vm_stderr);
 	//frame_stack.add(frame_ticker++);
+    }
+
+    public static void userlog(String S) {
+        if (userlogged == null) userlogged = new StringBuilder();
+        userlogged.append(S).append("\n");
     }
     
     // returns null when nothing changed since the last time
@@ -434,9 +441,12 @@ public class JDI2JSON {
     }
 
     static JsonObject output(String usercode, JsonArray trace) {
-        return Json.createObjectBuilder()
+        JsonObjectBuilder result = Json.createObjectBuilder();
+        result
             .add("code", usercode)
-            .add("trace", trace).build();
+            .add("trace", trace);
+        if (userlogged != null) result.add("userlog", userlogged.toString());
+        return result.build();
     }
 
     String exceptionMessage(ExceptionEvent event) {

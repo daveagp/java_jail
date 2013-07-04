@@ -36,6 +36,8 @@ public class InMemory {
 
     public static void main(String[] args) {
 
+        JDI2JSON.userlog("Debugger VM maxMemory: " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "M");    
+
         // just a sanity check, can the debugger VM see this NoopMain?
         traceprinter.shoelace.NoopMain.main(null); 
         // however, the debuggee might or might not be able to.
@@ -146,11 +148,19 @@ http://docs.oracle.com/javase/7/docs/jdk/api/jpda/jdi/com/sun/jdi/connect/Connec
             
             ((Connector.Argument)(args.get("main"))).setValue(className);
             
+            String options = "";
+            
             // inherit the classpath. if it were not for this, the CLASSPATH environment
             // variable would be inherited, but the -cp command-line option would not.
             // note that -cp overrides CLASSPATH.
 
-            ((Connector.Argument)(args.get("options"))).setValue("-cp " + System.getProperty("java.class.path"));
+            options += "-cp " + System.getProperty("java.class.path") + " ";
+
+            // set a memory limit
+            
+            options += "-Xmx128M" + " ";
+            
+            ((Connector.Argument)(args.get("options"))).setValue(options);
             
             //	    System.out.println("About to call LaunchingConnector.launch...");
 	    VirtualMachine result = connector.launch(args);
