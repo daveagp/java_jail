@@ -47,8 +47,10 @@ Installation steps:
 (2) You will need to copy some files from your system into ./lib64 --
     see ./lib64/.gitignore for the list of what we use. If you end up
     using more Java libraries, you might need to add more. We used
-    strace and ldd to figure out what to put there. You probably
+    "strace -f"/ldd/lsof to figure out what to put there. You probably
     can also just make a copy of all of /lib64 to ./lib64
+  * From Sasha Sirotkin: on Ubuntu, it appears also necessary for 
+    the lib/x86_64-linux-gnu folder to be copied to ./lib
 (3) Same as (1) with ./etc/ld.so.cache
 (4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
       EITHER:
