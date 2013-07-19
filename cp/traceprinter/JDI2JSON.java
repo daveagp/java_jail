@@ -60,6 +60,8 @@ public class JDI2JSON {
 
     public static StringBuilder userlogged;
 
+    public static boolean showVoid = true;
+
     public JDI2JSON(VirtualMachine vm, InputStream vm_stdout, InputStream vm_stderr) {
         stdout = new InputPuller(vm_stdout);
         stderr = new InputPuller(vm_stderr);
@@ -307,7 +309,7 @@ public class JDI2JSON {
         catch (AbsentInformationException ex) {
             //System.out.println("AIE: can't list variables in " + sf.location());
         }            
-        if (returnValue!=null) {
+        if (returnValue != null && (showVoid || returnValue != convertVoid)) {
             result.add("__return__", returnValue);
             result_ordered.add("__return__");
 	}        
@@ -404,6 +406,8 @@ public class JDI2JSON {
         }
     }
 
+    private JsonArray convertVoid = Json.createArrayBuilder().add("PRIMITIVE").add("void").build();
+
     private JsonValue convertValue(Value v) {
         if (v instanceof BooleanValue) {
             if (((BooleanValue)v).value()==true) 
@@ -418,8 +422,7 @@ public class JDI2JSON {
         else if (v instanceof FloatValue) return jsonReal(((FloatValue)v).value());
         else if (v instanceof DoubleValue) return jsonReal(((DoubleValue)v).value());
         else if (v instanceof CharValue) return jsonString(((CharValue)v).value()+"");
-        else if (v instanceof VoidValue) 
-            return Json.createArrayBuilder().add("PRIMITIVE").add("void").build();
+        else if (v instanceof VoidValue) return convertVoid;
         else if (!(v instanceof ObjectReference)) return JsonValue.NULL; //not a hack
         else {
 	    ObjectReference obj = (ObjectReference)v;
