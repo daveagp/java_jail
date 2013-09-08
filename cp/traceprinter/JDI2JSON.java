@@ -354,6 +354,11 @@ public class JDI2JSON {
         }
     }
     
+    List<String> wrapperTypes = 
+        new ArrayList<String>
+        (Arrays.asList
+         ("Byte Short Integer Long Float Double Character Boolean".split(" ")));
+
     private JsonValue convertObject(ObjectReference obj, boolean fullVersion) {
         JsonArrayBuilder result = Json.createArrayBuilder();
 
@@ -386,8 +391,16 @@ public class JDI2JSON {
         // now deal with Objects. 
         else {
             heap_done.add(obj.uniqueID());
-            result.add("INSTANCE")
-                .add(obj.referenceType().name());
+            result.add("INSTANCE");
+            if (obj.referenceType().name().startsWith("java.lang.")
+                && wrapperTypes.contains(obj.referenceType().name().substring(10))) {
+                result.add(obj.referenceType().name().substring(10));
+                result.add(jsonArray(jsonArray("NO-LABEL"),
+                                     convertValue(obj.getValue(obj.referenceType().fieldByName("value")))));
+            }
+            else {
+                result.add(obj.referenceType().name());
+            }
             if (showGuts(obj.referenceType())) {
                 // fields: -inherited -hidden +synthetic
                 // visibleFields: +inherited -hidden +synthetic
@@ -406,7 +419,19 @@ public class JDI2JSON {
         }
     }
 
-    private JsonArray convertVoid = Json.createArrayBuilder().add("PRIMITIVE").add("void").build();
+    private JsonArray convertVoid = jsonArray("VOID");
+
+    private JsonArray jsonArray(Object... args) {
+        JsonArrayBuilder result = Json.createArrayBuilder();
+        for (Object o : args) {
+            if (o instanceof JsonValue)
+                result.add((JsonValue)o);
+            else if (o instanceof String)
+                result.add((String)o);
+            else throw new RuntimeException("Add more cases to JDI2JSON.jsonArray(Object...)");
+        }
+        return result.build();
+    } 
 
     private JsonValue convertValue(Value v) {
         if (v instanceof BooleanValue) {
@@ -418,9 +443,12 @@ public class JDI2JSON {
         else if (v instanceof ByteValue) return jsonInt(((ByteValue)v).value());
         else if (v instanceof ShortValue) return jsonInt(((ShortValue)v).value());
         else if (v instanceof IntegerValue) return jsonInt(((IntegerValue)v).value());
-        else if (v instanceof LongValue) return jsonInt(((LongValue)v).value());
-        else if (v instanceof FloatValue) return jsonReal(((FloatValue)v).value());
-        else if (v instanceof DoubleValue) return jsonReal(((DoubleValue)v).value());
+        // some longs can't be represented as doubles, they won't survive the json conversion
+        else if (v instanceof LongValue) return jsonArray("NUMBER-LITERAL", jsonString(""+((LongValue)v).value()));
+        // floats who hold integer values will end up as integers after json conversion
+        // also, this lets us pass "Infinity" and other IEEE non-numbers
+        else if (v instanceof FloatValue) return jsonArray("NUMBER-LITERAL", jsonString(""+((FloatValue)v).value()));
+        else if (v instanceof DoubleValue) return jsonArray("NUMBER-LITERAL", jsonString(""+((DoubleValue)v).value()));
         else if (v instanceof CharValue) return jsonString(((CharValue)v).value()+"");
         else if (v instanceof VoidValue) return convertVoid;
         else if (!(v instanceof ObjectReference)) return JsonValue.NULL; //not a hack
