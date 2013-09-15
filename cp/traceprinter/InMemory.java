@@ -27,9 +27,12 @@ import javax.tools.*;
 
 import traceprinter.ramtools.*;
 
+import javax.json.*;
+
 public class InMemory {
 
     String usercode;
+    JsonObject optionsObject;
     String mainClass;
     VirtualMachine vm;
     Map<String, byte[]> bytecode;
@@ -46,16 +49,10 @@ public class InMemory {
         // reliably pass on to the debuggee.
 
         try {
-            StringBuilder usercodeBuilder = new StringBuilder();
-            BufferedReader br = 
-                new BufferedReader(new InputStreamReader(System.in));
-            
-            while (br.ready()) {
-                usercodeBuilder.append(br.readLine());
-                usercodeBuilder.append("\n");
-            }
-            
-            new InMemory(usercodeBuilder.toString());
+            new InMemory(
+                         Json.createReader(new InputStreamReader
+                                           (System.in, "UTF-8"))
+                         .readObject());
         } 
         catch (IOException e) {
             System.out.print(JDI2JSON.compileErrorOutput("[could not read user code]",
@@ -76,8 +73,9 @@ public class InMemory {
     }
 
     // figure out the class name, then compile and run main([])
-    InMemory(String usercode) {
-        this.usercode = usercode;
+    InMemory(JsonObject frontend_data) {
+        this.usercode = frontend_data.getJsonString("usercode").getString();
+        this.optionsObject = frontend_data.getJsonObject("options");
 
         // not 100% accurate, if people have multiple top-level classes + public inner classes
         Pattern p = Pattern.compile("public\\s+class\\s+([a-zA-Z0-9_]+)\\b");
@@ -160,6 +158,8 @@ http://docs.oracle.com/javase/7/docs/jdk/api/jpda/jdi/com/sun/jdi/connect/Connec
             
             options += "-Xmx128M" + " ";
             
+            options += "-Dfile.encoding=UTF-8" + " ";
+
             ((Connector.Argument)(args.get("options"))).setValue(options);
             
             //	    System.out.println("About to call LaunchingConnector.launch...");

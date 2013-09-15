@@ -62,7 +62,8 @@ public class JSONTracingThread extends Thread {
         mgr = vm.eventRequestManager();
         jdi2json = new JDI2JSON(vm,
                                 vm.process().getInputStream(),
-                                vm.process().getErrorStream());
+                                vm.process().getErrorStream(),
+                                im.optionsObject);
         setEventRequests();
     }
     

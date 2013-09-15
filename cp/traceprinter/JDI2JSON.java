@@ -30,7 +30,12 @@ public class JDI2JSON {
             return contents.toString();
         }
         InputPuller(InputStream ir) {
-            vm_link = new InputStreamReader(ir);
+            try {
+                vm_link = new InputStreamReader(ir, "UTF-8");
+            }
+            catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("Encoding error!");
+            }
         }
         void pull() {
             int BUFFER_SIZE = 2048;
@@ -38,8 +43,9 @@ public class JDI2JSON {
             int count;
             try {
                 while (vm_link.ready() 
-                       && ((count = vm_link.read(cbuf, 0, BUFFER_SIZE)) >= 0))
+                       && ((count = vm_link.read(cbuf, 0, BUFFER_SIZE)) >= 0)) {
                     contents.write(cbuf, 0, count);
+                }
             } 
             catch(IOException e) {
                 throw new RuntimeException("I/O Error!");
@@ -62,10 +68,18 @@ public class JDI2JSON {
 
     public static boolean showVoid = true;
 
-    public JDI2JSON(VirtualMachine vm, InputStream vm_stdout, InputStream vm_stderr) {
+    boolean showStringsAsValues = true;
+    boolean showAllFields = false;
+
+    public JDI2JSON(VirtualMachine vm, InputStream vm_stdout, InputStream vm_stderr, JsonObject optionsObject) {
         stdout = new InputPuller(vm_stdout);
         stderr = new InputPuller(vm_stderr);
 	//frame_stack.add(frame_ticker++);
+        if (optionsObject.containsKey("showStringsAsValues"))
+            showStringsAsValues 
+                = optionsObject.getBoolean("showStringsAsValues");
+        if (optionsObject.containsKey("showAllFields"))
+            showAllFields = optionsObject.getBoolean("showAllFields");
     }
 
     public static void userlog(String S) {
@@ -381,10 +395,10 @@ public class JDI2JSON {
 	}
         else if (obj instanceof StringReference) {
             return Json.createArrayBuilder()
-		.add("HEAP_PRIMITIVE")
-		.add("String")
-		.add(jsonString(((StringReference)obj).value()))
-		.build();
+                .add("HEAP_PRIMITIVE")
+                .add("String")
+                .add(jsonString(((StringReference)obj).value()))
+                .build();
         }
         // do we need special cases for ClassObjectReference, ThreadReference,.... ?
         
@@ -406,13 +420,24 @@ public class JDI2JSON {
                 // visibleFields: +inherited -hidden +synthetic
                 // allFields: +inherited +hidden +repeated_synthetic
                 for (Map.Entry<Field,Value> me :  
-                         obj.getValues(obj.referenceType().visibleFields()).entrySet()) {
+                          obj.getValues
+                         (
+                          showAllFields ? 
+                          obj.referenceType().allFields() :
+                          obj.referenceType().visibleFields() )
+                         .entrySet()
+                     ) {
                     if (!me.getKey().isStatic()
                         //&& !me.getKey().isSynthetic() // uncomment to hide synthetic fields (this$0 or val$lv)
                         )
                         result.add(Json.createArrayBuilder()
-                                       .add(me.getKey().name())
-                                       .add(convertValue(me.getValue())));
+                                   .add
+                                   ((
+                                     showAllFields ? 
+                                     me.getKey().declaringType().name()+"." : 
+                                     ""
+                                     )+me.getKey().name())
+                                   .add(convertValue(me.getValue())));
                 }
             }
             return result.build(); 
@@ -452,6 +477,8 @@ public class JDI2JSON {
         else if (v instanceof CharValue) return jsonString(((CharValue)v).value()+"");
         else if (v instanceof VoidValue) return convertVoid;
         else if (!(v instanceof ObjectReference)) return JsonValue.NULL; //not a hack
+        else if (showStringsAsValues && v instanceof StringReference)
+            return jsonString(((StringReference)v).value());
         else {
 	    ObjectReference obj = (ObjectReference)v;
             heap.put(obj.uniqueID(), obj);
