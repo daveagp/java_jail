@@ -12,7 +12,7 @@ public class VMCommandee {
 
     // returns null if everything worked
     // else, returns an error message
-    public String runMainNoArgs(String className) {
+    public String runMain(String className, String[] args) {
 
         Class<?> target;
         try {
@@ -33,7 +33,7 @@ public class VMCommandee {
             return "Class "+className+" needs public static void main(String[] args)";
         try {
             // first is null since it is a static method
-            main.invoke(null, new Object[]{new String[0]});
+            main.invoke(null, new Object[]{args});
             return null;
         }
         catch (IllegalAccessException e) {

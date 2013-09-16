@@ -56,10 +56,14 @@ public class VMCommander extends Thread {
             // load and instantiate Commandee. very similar to above!
             ObjectReference VMCommandee_instance = instantiate("traceprinter.shoelace.VMCommandee");
 
+            ArrayReference mirrorOfArgs = newArray("java.lang.String", im.argsArray.size());
+            for (int i=0; i<im.argsArray.size(); i++)
+                mirrorOfArgs.setValue(i, vm.mirrorOf(im.argsArray.getString(i)));
+            
             StringReference result;
             try {
                 result = (StringReference)
-                    call_i(VMCommandee_instance, "runMainNoArgs", vm.mirrorOf(mainClassName));
+                    call_i(VMCommandee_instance, "runMain", vm.mirrorOf(mainClassName), mirrorOfArgs);
             }
             catch (VMDisconnectedException e) {
                 // means we exceeded step limit

@@ -33,6 +33,7 @@ public class InMemory {
 
     String usercode;
     JsonObject optionsObject;
+    JsonArray argsArray;
     String mainClass;
     VirtualMachine vm;
     Map<String, byte[]> bytecode;
@@ -76,6 +77,7 @@ public class InMemory {
     InMemory(JsonObject frontend_data) {
         this.usercode = frontend_data.getJsonString("usercode").getString();
         this.optionsObject = frontend_data.getJsonObject("options");
+        this.argsArray = frontend_data.getJsonArray("args");
 
         // not 100% accurate, if people have multiple top-level classes + public inner classes
         Pattern p = Pattern.compile("public\\s+class\\s+([a-zA-Z0-9_]+)\\b");
