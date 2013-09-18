@@ -164,7 +164,7 @@ public class JDI2JSON {
         JsonObjectBuilder statics = Json.createObjectBuilder();
         JsonArrayBuilder statics_a = Json.createArrayBuilder();
         for (ReferenceType rt : staticListable) 
-            if (rt.isInitialized()) 
+            if (rt.isInitialized() && !in_builtin_package(rt.name())) 
                 for (Field f : rt.visibleFields()) 
                     if (f.isStatic()) {
                         statics.add(rt.name()+"."+f.name(),
@@ -191,10 +191,21 @@ public class JDI2JSON {
     
     private String[] builtin_packages = {"java", "javax", "sun", "com.sun", "traceprinter"};
 
+    private String[] PU_stdlib = {"BinaryIn", "BinaryOut", "BinaryStdIn", "BinaryStdOut",
+                                  "Copy", "Draw", "DrawListener", "In", "InTest",
+                                  "Out", "Picture", "StdArrayIO", "StdAudio",
+                                  "StdDraw", "StdDraw3D", "StdIn", "StdInTest",
+                                  "StdOut", "StdRandom", "StdStats", "Stopwatch"};
+
+    // input format: [package.]ClassName:lineno or [package.]ClassName
     private boolean in_builtin_package(String S) {
+        S = S.split(":")[0];
         for (String badPrefix: builtin_packages)
             if (S.startsWith(badPrefix+"."))
-	    return true;
+                return true;
+        for (String badClass: PU_stdlib)
+            if (S.equals(badClass)) 
+                return true;
         return false;
     }
 
