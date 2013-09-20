@@ -485,7 +485,7 @@ public class JDI2JSON {
         // also, this lets us pass "Infinity" and other IEEE non-numbers
         else if (v instanceof FloatValue) return jsonArray("NUMBER-LITERAL", jsonString(""+((FloatValue)v).value()));
         else if (v instanceof DoubleValue) return jsonArray("NUMBER-LITERAL", jsonString(""+((DoubleValue)v).value()));
-        else if (v instanceof CharValue) return jsonString(((CharValue)v).value()+"");
+        else if (v instanceof CharValue) return jsonArray("CHAR-LITERAL", jsonString(((CharValue)v).value()+""));
         else if (v instanceof VoidValue) return convertVoid;
         else if (!(v instanceof ObjectReference)) return JsonValue.NULL; //not a hack
         else if (showStringsAsValues && v instanceof StringReference)
