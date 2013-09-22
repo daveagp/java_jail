@@ -34,6 +34,7 @@ public class InMemory {
     String usercode;
     JsonObject optionsObject;
     JsonArray argsArray;
+    String givenStdin;
     String mainClass;
     VirtualMachine vm;
     Map<String, byte[]> bytecode;
@@ -78,6 +79,7 @@ public class InMemory {
         this.usercode = frontend_data.getJsonString("usercode").getString();
         this.optionsObject = frontend_data.getJsonObject("options");
         this.argsArray = frontend_data.getJsonArray("args");
+        this.givenStdin = frontend_data.getJsonString("stdin").getString();
 
         // not 100% accurate, if people have multiple top-level classes + public inner classes
         Pattern p = Pattern.compile("public\\s+class\\s+([a-zA-Z0-9_]+)\\b");
@@ -88,6 +90,13 @@ public class InMemory {
         }
 
         mainClass = m.group(1);
+
+        for (String S: JDI2JSON.PU_stdlib) {
+            if (mainClass.equals(S)) {
+                compileError("You cannot use a class named "+S+" since it conflicts with a 'stdlib' class name", 1, 1);
+                return;
+            }
+        }
 
         CompileToBytes c2b = new CompileToBytes();
 

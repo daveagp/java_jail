@@ -169,6 +169,7 @@ public class JSONTracingThread extends Thread {
     ThreadReference theThread = null;
         
     private Thread handleEvent(Event event) {
+        //System.out.println(event);
         if (event instanceof ClassPrepareEvent) {
             classPrepareEvent((ClassPrepareEvent)event);
         } else if (event instanceof VMDeathEvent) {
@@ -194,7 +195,8 @@ public class JSONTracingThread extends Thread {
                 }
             } catch (AbsentInformationException e) {}
 
-            if (steps < MAX_STEPS && jdi2json.reportEventsAtLocation(loc)) {
+            if (steps < MAX_STEPS && jdi2json.reportEventsAtLocation(loc)
+                || event instanceof ExceptionEvent && ((ExceptionEvent)event).catchLocation()==null) {
 		try {
                     for (JsonObject ep : jdi2json.convertExecutionPoint(event, loc, theThread)) {
 			output.add(ep);
@@ -214,6 +216,9 @@ public class JSONTracingThread extends Thread {
 			    vm.exit(0);
 			}
 		    }
+                    if (event instanceof ExceptionEvent && ((ExceptionEvent)event).catchLocation()==null) {
+                        vm.exit(0);
+                    }
 		} catch (RuntimeException e) {
 		    System.out.println("Error " + e.toString());
 		    e.printStackTrace();
@@ -253,11 +258,17 @@ public class JSONTracingThread extends Thread {
     private void classPrepareEvent(ClassPrepareEvent event)  {
         //System.out.println("CPE!");
         ReferenceType rt = event.referenceType();
-        if (!rt.name().startsWith("traceprinter."))
-            jdi2json.staticListable.add(rt);
 
-        if (rt.name().startsWith("traceprinter") && !rt.name().equals("traceprinter.shoelace.NoopMain"))
-            return;
+        if (!rt.name().equals("traceprinter.shoelace.NoopMain")) {
+            if (rt.name().equals("StdIn"))
+                jdi2json.stdinRT = rt;
+            
+            if (jdi2json.in_builtin_package(rt.name()))
+                return;
+        }
+
+        jdi2json.staticListable.add(rt);
+
         //System.out.println(rt.name());
         try {
             for (Location loc : rt.allLineLocations()) {

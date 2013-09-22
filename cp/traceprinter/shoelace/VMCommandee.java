@@ -12,7 +12,7 @@ public class VMCommandee {
 
     // returns null if everything worked
     // else, returns an error message
-    public String runMain(String className, String[] args) {
+    public String runMain(String className, String[] args, String stdin) {
 
         Class<?> target;
         try {
@@ -28,6 +28,14 @@ public class VMCommandee {
             return "Class "+className+" needs public static void main(String[] args)";
         }
 
+        if (stdin != null)
+            try {
+                System.setIn(new java.io.ByteArrayInputStream(stdin.getBytes("UTF-8")));
+            }
+            catch (SecurityException | java.io.UnsupportedEncodingException e) {
+                return "Internal error: can't setIn";
+            }
+
         int modifiers = main.getModifiers();
         if (modifiers != (Modifier.PUBLIC | Modifier.STATIC))
             return "Class "+className+" needs public static void main(String[] args)";
@@ -40,8 +48,15 @@ public class VMCommandee {
             return "Internal error invoking main";
         }
         catch (InvocationTargetException e) {
-            // uncaught exception, but this is handled by normal machinery
-            return null;
+            RuntimeException throwMe = null;
+            try {
+                // throw it again in a way that the tracer can see it
+                throwMe = (RuntimeException)e.getTargetException();
+            }
+            catch (ClassCastException cce) {
+                return "Internal error handling exception";
+            }
+            throw throwMe;
         }
     }
 

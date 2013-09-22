@@ -64,6 +64,8 @@ public class JDI2JSON {
 
     public List<ReferenceType> staticListable = new ArrayList<>();
 
+    public ReferenceType stdinRT = null;
+
     public static StringBuilder userlogged;
 
     public static boolean showVoid = true;
@@ -171,6 +173,13 @@ public class JDI2JSON {
                                     convertValue(rt.getValue(f)));
                         statics_a.add(rt.name()+"."+f.name());
                     }
+        if (stdinRT != null && stdinRT.isInitialized()) {
+            int stdinPosition = ((IntegerValue)stdinRT.getValue(stdinRT.fieldByName("position"))).value();
+            result.add("stdinPosition", stdinPosition);
+            /*            statics.add("stdin.Position", stdinPosition);
+                          statics_a.add("stdin.Position");*/
+        }
+
         result.add("globals", statics);
         result.add("ordered_globals", statics_a);
         
@@ -185,20 +194,22 @@ public class JDI2JSON {
 	    results.add(this_ep);
 	    last_ep = this_ep;
 	}
+        
+        
 	
 	return results;
     }
     
-    private String[] builtin_packages = {"java", "javax", "sun", "com.sun", "traceprinter"};
+    public static String[] builtin_packages = {"java", "javax", "sun", "com.sun", "traceprinter"};
 
-    private String[] PU_stdlib = {"BinaryIn", "BinaryOut", "BinaryStdIn", "BinaryStdOut",
+    public static String[] PU_stdlib = {"BinaryIn", "BinaryOut", "BinaryStdIn", "BinaryStdOut",
                                   "Copy", "Draw", "DrawListener", "In", "InTest",
                                   "Out", "Picture", "StdArrayIO", "StdAudio",
                                   "StdDraw", "StdDraw3D", "StdIn", "StdInTest",
                                   "StdOut", "StdRandom", "StdStats", "Stopwatch"};
 
     // input format: [package.]ClassName:lineno or [package.]ClassName
-    private boolean in_builtin_package(String S) {
+    public boolean in_builtin_package(String S) {
         S = S.split(":")[0];
         for (String badPrefix: builtin_packages)
             if (S.startsWith(badPrefix+"."))

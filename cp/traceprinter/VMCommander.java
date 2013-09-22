@@ -38,6 +38,7 @@ public class VMCommander extends Thread {
         this.mainClassName = im.mainClass;
     }
 
+    ObjectReference VMCommandee_instance = null;
     public void run() {
         try {
             vm.suspend();
@@ -54,7 +55,7 @@ public class VMCommander extends Thread {
                 call_i(ByteClassLoader_instance, "define", vm.mirrorOf(me.getKey()), mirrorOf(vm, me.getValue()));
 
             // load and instantiate Commandee. very similar to above!
-            ObjectReference VMCommandee_instance = instantiate("traceprinter.shoelace.VMCommandee");
+            VMCommandee_instance = instantiate("traceprinter.shoelace.VMCommandee");
 
             ArrayReference mirrorOfArgs = newArray("java.lang.String", im.argsArray.size());
             for (int i=0; i<im.argsArray.size(); i++)
@@ -63,14 +64,23 @@ public class VMCommander extends Thread {
             StringReference result;
             try {
                 result = (StringReference)
-                    call_i(VMCommandee_instance, "runMain", vm.mirrorOf(mainClassName), mirrorOfArgs);
+                    call_i(VMCommandee_instance, 
+                           "runMain", 
+                           vm.mirrorOf(mainClassName), 
+                           mirrorOfArgs, 
+                           vm.mirrorOf(im.givenStdin));
             }
             catch (VMDisconnectedException e) {
                 // means we exceeded step limit
                 success = true; // visualization is fine
                 return;
             }
-
+            /*            // uncaught exception that originates in non-user code (e.g. scanner runs out)
+            catch (InvocationException e) {
+                System.out.println(e.toString());
+                return;
+            }
+            */
             if (result == null) {
                 success = true;
             }
