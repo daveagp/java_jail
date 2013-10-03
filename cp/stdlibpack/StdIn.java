@@ -56,6 +56,13 @@ public final class StdIn {
 
     /*** end: section (1 of 2) of code duplicated from In to StdIn */
 
+    public static void setString(String text) {
+        scanner.close(); // warning, this may close StdIn the first time!
+        setScanner(new Scanner(text));
+        position = 0;
+    }
+
+
     /*** begin: section (2 of 2) of code duplicated from In to StdIn,
       *  with all methods changed from "public" to "public static" ***/
 

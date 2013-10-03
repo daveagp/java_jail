@@ -34,11 +34,15 @@ public final class StdOut {
     private static PrintWriter out;
 
     // this is called before invoking any methods
-    static {
+    public static void resync() {
         try {
             out = new PrintWriter(new OutputStreamWriter(System.out, charsetName), true);
         }
         catch (UnsupportedEncodingException e) { System.out.println(e); }
+    }
+
+    static {
+        resync();
     }
 
     // don't instantiate
