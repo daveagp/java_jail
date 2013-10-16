@@ -1,4 +1,6 @@
 package stdlibpack;
+
+
 /*************************************************************************
  *  Compilation:  javac Stopwatch.java
  *
@@ -21,11 +23,16 @@ public class Stopwatch {
 
     private final long start;
 
+    private String startString;
+
    /**
      * Create a stopwatch object.
      */
     public Stopwatch() {
         start = System.currentTimeMillis();
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss.SSS");
+        startString = sdf.format(start);
     } 
 
 

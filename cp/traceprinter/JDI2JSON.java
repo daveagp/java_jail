@@ -462,6 +462,14 @@ public class JDI2JSON {
                                    .add(convertValue(me.getValue())));
                 }
             }
+            else if (obj.referenceType().name().endsWith(".Stopwatch") ||
+                     obj.referenceType().name().equals("Stopwatch")) {
+                ReferenceType rt = obj.referenceType();
+                Field f = rt.fieldByName("startString");
+                result.add(Json.createArrayBuilder().add("started at").add(
+                                                                           Json.createArrayBuilder().add("NUMBER-LITERAL").add(
+                                                                                                                               convertValue(obj.getValue(f)))));
+            }
             return result.build(); 
         }
     }
