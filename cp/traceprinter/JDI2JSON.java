@@ -98,6 +98,8 @@ public class JDI2JSON {
 	//System.out.println(e);
 
 	ArrayList<JsonObject> results = new ArrayList<>();
+
+        if (loc.method().name().indexOf('$')>=0) return results; // don't visualize synthetic access$000 methods
         
         heap_done = new TreeSet<Long>();
         heap = new TreeMap<>();
@@ -206,7 +208,7 @@ public class JDI2JSON {
                                   "Copy", "Draw", "DrawListener", "In", "InTest",
                                   "Out", "Picture", "StdArrayIO", "StdAudio",
                                   "StdDraw", "StdDraw3D", "StdIn", "StdInTest",
-                                  "StdOut", "StdRandom", "StdStats", "Stopwatch"};
+                                        "StdOut", "StdRandom", "StdStats", "Stopwatch", "Stack", "Queue", "ST", "Point"};
 
     // input format: [package.]ClassName:lineno or [package.]ClassName
     public boolean in_builtin_package(String S) {
@@ -227,7 +229,8 @@ public class JDI2JSON {
     }
 
     private boolean showGuts(ReferenceType rt) {
-	return (!in_builtin_package(rt.name()));
+	return (rt.name().matches("(^|\\.)Point") ||
+                !in_builtin_package(rt.name()));
     }    
 
     public boolean reportEventsAtLocation(Location loc) {
@@ -435,7 +438,9 @@ public class JDI2JSON {
                                      convertValue(obj.getValue(obj.referenceType().fieldByName("value")))));
             }
             else {
-                result.add(obj.referenceType().name());
+                String fullName = obj.referenceType().name();
+                if (fullName.indexOf('$') > 0) fullName=fullName.substring(1+fullName.indexOf('$'));
+                result.add(fullName);
             }
             if (showGuts(obj.referenceType())) {
                 // fields: -inherited -hidden +synthetic
@@ -450,7 +455,7 @@ public class JDI2JSON {
                          .entrySet()
                      ) {
                     if (!me.getKey().isStatic()
-                        //&& !me.getKey().isSynthetic() // uncomment to hide synthetic fields (this$0 or val$lv)
+                        && !me.getKey().isSynthetic() // uncomment to hide synthetic fields (this$0 or val$lv)
                         )
                         result.add(Json.createArrayBuilder()
                                    .add
