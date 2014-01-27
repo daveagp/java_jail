@@ -1,0 +1,3 @@
+../../java/bin/javac -cp .:..:../javax.json-1.0.jar:../../java/lib/tools.jar *.java
+# to make a simple test, create Test.java in .. then compile it and run "java traceprinter.JSONTrace Test"
+# for a more complex chrooted test, see ../../README

@@ -43,7 +43,8 @@ Installation steps:
 
 (0) It is highly recommended to NOT put this directory anywhere accessible
     via http, just for sanity's sake.
-(1) Unzip java to the ./java directory.
+(1) Get java. (http://stackoverflow.com/questions/10268583)
+    Unzip java to the ./java directory.
 (2) You will need to copy some files from your system into ./lib64 --
     see ./lib64/.gitignore for the list of what we use. If you end up
     using more Java libraries, you might need to add more. We used
@@ -51,7 +52,7 @@ Installation steps:
     can also just make a copy of all of /lib64 to ./lib64
   * From Sasha Sirotkin: on Ubuntu, it appears also necessary for 
     the lib/x86_64-linux-gnu folder to be copied to ./lib
-(3) Same as (1) with ./etc/ld.so.cache
+(3) cp /etc/ld.so.cache ./etc
 (4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
       EITHER:
       To mount once (until reboot or "umount /path/to/chroot/proc")
