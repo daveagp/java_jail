@@ -70,11 +70,11 @@ Installation steps:
     you probably want to prevent them from accessing the internet.
     But, the JDI requires access to a local debugging port to
     communicate between the tracing VM and the traced VM. On our system,
-    all sandboxed executions run in the "csc-sandboxed" group, so we have
+    all sandboxed executions run with group id 1000, so we have
 # to allow JDI:
 -A OUTPUT -p tcp -d 127.0.0.1 --dport 32000:65535 -m owner --gid-owner 1000 -j ACCEPT
 # to deny everything else:
--A OUTPUT -m owner --gid-owner csc-sandboxed -j DROP
+-A OUTPUT -m owner --gid-owner 1000 -j DROP
 
 === Testing ===
 
