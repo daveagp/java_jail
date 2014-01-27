@@ -63,10 +63,9 @@ Installation steps:
         sudo mknod -m 0666 ./dev/null c 1 3
         sudo mknod -m 0666 ./dev/random c 1 8
         sudo mknod -m 0444 ./dev/urandom c 1 9
-(6) Go in to ./cp/traceprint and run "./compile" there.
-(7) File system permissions. At a basic level, it is enough to
+(6) File system permissions. At a basic level, it is enough to
     allow everything to be read and executed by everyone, and written by nobody.
-(8) iptables considerations. If you are running arbitrary user code,
+(7) iptables considerations. If you are running arbitrary user code,
     you probably want to prevent them from accessing the internet.
     But, the JDI requires access to a local debugging port to
     communicate between the tracing VM and the traced VM. On our system,
@@ -81,8 +80,13 @@ Installation steps:
 Assuming you have CEMC safeexec (https://github.com/cemc/safeexec)
 installed, here is a way how to test whether things are installed correctly.
 
-(0) Write some java class Test somewhere, Test.java. 
-(1) Trace it:
+(0) Go in to ./cp/traceprint and run "./compile" there.
+
+(1) Compare this output with cp/traceprinter/expected-output.txt:cp/traceprinter/test-input.txt
+
+./java/bin/java -cp .:cp:cp/javax.json-1.0.jar:java/lib/tools.jar traceprinter.InMemory < cp/traceprinter/test-input.txt
+
+(1) Try with safeexec
 /path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < Test.java
 
 ===
