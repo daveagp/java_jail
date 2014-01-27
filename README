@@ -43,8 +43,9 @@ Installation steps:
 
 (0) It is highly recommended to NOT put this directory anywhere accessible
     via http, just for sanity's sake.
-(1) Get java. (http://stackoverflow.com/questions/10268583)
-    Unzip java to the ./java directory.
+(1) Get java. As of the time of writing, a suitable link for wget is: 
+ http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-x64.tar.gz
+    Extract java to the ./java directory.
 (2) You will need to copy some files from your system into ./lib64 --
     see ./lib64/.gitignore for the list of what we use. If you end up
     using more Java libraries, you might need to add more. We used
@@ -52,7 +53,7 @@ Installation steps:
     can also just make a copy of all of /lib64 to ./lib64
   * From Sasha Sirotkin: on Ubuntu, it appears also necessary for 
     the lib/x86_64-linux-gnu folder to be copied to ./lib
-(3) cp /etc/ld.so.cache ./etc
+(3) copy /etc/ld.so.cache to ./etc
 (4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
       EITHER:
       To mount once (until reboot or "umount /path/to/chroot/proc")
@@ -80,14 +81,16 @@ Installation steps:
 Assuming you have CEMC safeexec (https://github.com/cemc/safeexec)
 installed, here is a way how to test whether things are installed correctly.
 
-(0) Go in to ./cp/traceprint and run "./compile" there.
+(0) Go in to ./cp/traceprinter and run "make" there
 
-(1) Compare this output with cp/traceprinter/expected-output.txt:cp/traceprinter/test-input.txt
+(1) Run this command (from java_jail):
 
 ./java/bin/java -cp .:cp:cp/javax.json-1.0.jar:java/lib/tools.jar traceprinter.InMemory < cp/traceprinter/test-input.txt
 
-(1) Try with safeexec
-/path/to/safeexec --chroot_dir /path/to/java_jail/ --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < Test.java
+The expected output is at cp/traceprinter/expected-output.txt
+
+(2) Try with safeexec (from java_jail):
+/path/to/safeexec --chroot_dir . --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < cp/traceprinter/test-input.txt
 
 ===
 
