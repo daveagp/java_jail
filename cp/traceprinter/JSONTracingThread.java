@@ -42,9 +42,9 @@ public class JSONTracingThread extends Thread {
     
     private JDI2JSON jdi2json;
 
-    private int MAX_STEPS = 256;
+    static int MAX_STEPS = 256;
     private int steps = 0;
-    private int MAX_STACK_SIZE = 16;
+    static int MAX_STACK_SIZE = 16;
 
     private String usercode;
 

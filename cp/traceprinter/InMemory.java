@@ -81,6 +81,14 @@ public class InMemory {
         this.argsArray = frontend_data.getJsonArray("args");
         this.givenStdin = frontend_data.getJsonString("stdin").getString();
 
+        if (frontend_data.containsKey("visualizer_args") && (!frontend_data.isNull("visualizer_args"))) {
+            JsonObject visualizer_args = frontend_data.getJsonObject("visualizer_args");
+            if (visualizer_args.getJsonNumber("MAX_STEPS") != null)
+                JSONTracingThread.MAX_STEPS = visualizer_args.getJsonNumber("MAX_STEPS").intValue();
+            if (visualizer_args.getJsonNumber("MAX_STACK_SIZE") != null)
+                JSONTracingThread.MAX_STACK_SIZE = visualizer_args.getJsonNumber("MAX_STACK_SIZE").intValue();
+        }
+
         // not 100% accurate, if people have multiple top-level classes + public inner classes
         Pattern p = Pattern.compile("public\\s+class\\s+([a-zA-Z0-9_]+)\\b");
         Matcher m = p.matcher(usercode);
