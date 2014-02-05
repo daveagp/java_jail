@@ -81,7 +81,7 @@ Installation steps:
 Assuming you have CEMC safeexec (https://github.com/cemc/safeexec)
 installed, here is a way how to test whether things are installed correctly.
 
-(0) Go in to ./cp/traceprinter and run "make" there
+(0) Go in to ./cp and run "make" there
 
 (1) Run this command (from java_jail):
 
