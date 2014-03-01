@@ -3,7 +3,6 @@ package traceprinter.ramtools;
 import javax.tools.*;
 import java.io.*;
 import java.util.*;
-import javax.json.*;
 
 public class CompileToBytes {
 
@@ -32,18 +31,12 @@ public class CompileToBytes {
         Otherwise, returns bytecode for files defined as a result of compiling.
     ***/
 
-    // takes a class name and its source code
     public Map<String, byte[]> compileFile(String className, String sourceCode) {
-        return compileFiles(new String[][] {{className, sourceCode}});
-    }
-
-    public Map<String, byte[]> compileFiles(String[][] classCodePairs) {
         if (used) throw new RuntimeException("You already used this CompileToBytes.");
         used = true;
         
         ArrayList<RAMJavaFile> sourceFiles = new ArrayList<>();
-        for (String[] pair : classCodePairs)
-            sourceFiles.add(new RAMJavaFile(pair[0], pair[1]));
+        sourceFiles.add(new RAMJavaFile(className, sourceCode));
         
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
@@ -62,100 +55,5 @@ public class CompileToBytes {
         }
 
         return bytecodes;
-    }
-
-
-    /* main() Method.
-
-    standard input: A Json Object (UTF-8) 
-    - whose keys are class names (optionally package qualified with . or /)
-    - whose values are java source code
-
-    Note that if there is additional data after the object, it will be silently ignored (javax.json doesn't seem to have a way to detect this)
-   
-    compiles these files (against the current classpath)
-
-    output: A Json Object
-    - status: "Internal Error", "Compile-Time Error", "Success"
-    - if "Internal Error": errmsg: describing the internal error; trace: stack trace
-    - if "Compile-Time Error": message, filename, line, col, (startpos, endpos)
-    - if "Success": bytecodes, (warning)
-    
-    bytecodes is a map from class names (with .s and $s) to bytecodes
-
-    */
-
-    /* sample StdIn:
-
-    {"Hello":"public class Hello{public static void main(String[]args){System.out.println(\"Hello\");}}","Multi":"public class Multi{}class Extra{}","Outer":"public class Outer{public class Inner{}}","pckg.Packed":"package pckg;public class Packed{}","Anon":"public class Anon{{new Anon(){void foo(){}};}}"}
-
-    you can also use pckg/Packed or Packed for pckg.Packed
-
-    for a compiler error:
-    {"A":"public class A{{int x; x = 5.0;}}"}
-
-    to generate a warning:
-    {"Warn":"public class Warn {{ Class<Byte> x = (Class)Integer.class; }}"}
-
-    */
-
-
-    public static void main(String[] args) {
-        InputStreamReader isr;
-        try {
-            isr = new InputStreamReader(System.in, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
-            System.out.println("UnsupportedEncodingException!");
-            return;
-        }
-        JsonReader jr = Json.createReader(isr);
-        JsonObject sourceFiles = jr.readObject();
-
-        String[][] pairs = new String[sourceFiles.size()][2];
-
-        {
-            int i = 0;
-            for (Map.Entry<String, JsonValue> pair : sourceFiles.entrySet()) {
-                pairs[i][0] = pair.getKey();
-                pairs[i][1] = ((JsonString)pair.getValue()).getString();
-                i++;
-            }
-        }
-        
-        CompileToBytes c2b = new CompileToBytes();
-
-        c2b.compilerOutput = new StringWriter();
-        c2b.options = Arrays.asList("-g -Xmaxerrs 1".split(" "));
-        DiagnosticCollector<JavaFileObject> errorCollector = new DiagnosticCollector<>();
-        c2b.diagnosticListener = errorCollector;
-
-        Map<String, byte[]> classMap = c2b.compileFiles(pairs);
-        
-        if (classMap == null) {
-            for (Diagnostic<? extends JavaFileObject> err : errorCollector.getDiagnostics())
-                if (err.getKind() == Diagnostic.Kind.ERROR) {
-                    System.out.println("Error: " + err.getMessage(null) + " " + err.getLineNumber() +
-                                       " " + err.getColumnNumber() + " " + err.getSource());
-                    return;
-                }
-            System.out.println("Compiler did not work, but reported no ERROR?!?!");
-            return;
-        }
-        
-        JsonObjectBuilder classFiles = Json.createObjectBuilder();
-        for (Map.Entry<String, byte[]> pair : classMap.entrySet()) {
-            byte[] bytes = pair.getValue();
-            char[] hexEncoding = new char[bytes.length*2];
-            char[] hexArray = "0123456789ABCDEF".toCharArray();
-            for (int i = 0; i < bytes.length; i++) {
-                int v = bytes[i] & 0xFF;
-                hexEncoding[i*2] = hexArray[v >>> 4];
-                hexEncoding[i*2 + 1] = hexArray[v & 0x0F];
-            }
-            classFiles.add(pair.getKey(), new String(hexEncoding));
-        }
-
-        System.out.println(classFiles.build().toString());
     }
 }
