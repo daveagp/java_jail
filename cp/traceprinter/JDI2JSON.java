@@ -545,26 +545,33 @@ public class JDI2JSON {
     String exceptionMessage(ExceptionEvent event) {
         ObjectReference exc = event.exception();
         ReferenceType excType = exc.referenceType();
+	System.out.println(exc.getClass());
+	System.out.println(excType.getClass());
         try {
             // this is the logical approach, but gives "Unexpected JDWP Error: 502" in invokeMethod
             // even if we suspend-and-resume the thread t
-            /*ThreadReference t = event.thread();
-            Method mm = excType.methodsByName("getMessage").get(0);
-            t.suspend();
-            Value v = exc.invokeMethod(t, mm, new ArrayList<Value>(), 0);
-            t.resume();
+            ThreadReference t = event.thread();
+	    Method mm = excType.methodsByName("getMessage").get(0);
+	    exc.disableCollection();
+	    t.stop(exc);
+	    //t.suspend();
+	    t.virtualMachine().suspend();
+	    System.out.println(t.status());
+            Value v = exc.invokeMethod(t, mm, new ArrayList<Value>(), ObjectReference.INVOKE_NONVIRTUAL|ObjectReference.INVOKE_SINGLE_THREADED);
+            //t.resume();
+	    vm.resume();
             StringReference sr = (StringReference) v;
-            String detail = sr.value();*/
+            String detail = sr.value();
 
             // so instead we just look for the longest detailMessage
-            String detail = "";
+            /*String detail = "";
             for (Field ff: excType.allFields())
                 if (ff.name().equals("detailMessage")) {
                     StringReference sr = (StringReference) exc.getValue(ff);
                     String thisMsg = sr == null ? null : sr.value();
                     if (thisMsg != null && thisMsg.length() > detail.length())
                         detail = thisMsg;
-                }
+			}*/
 
             if (detail.equals(""))
                 return excType.name(); // NullPointerException has no detail msg
