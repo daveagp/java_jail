@@ -122,6 +122,12 @@ public class CompileToBytes {
             int i = 0;
             for (Map.Entry<String, JsonValue> pair : sourceFiles.entrySet()) {
                 pairs[i][0] = pair.getKey();
+                if (! (pair.getValue() instanceof JsonString)) {
+                    throw new RuntimeException("For key " + pair.getKey() +
+                                               " value is a " +
+                                               pair.getKey().getClass()+":\n"+
+                                               pair.getKey().toString());
+                }
                 pairs[i][1] = ((JsonString)pair.getValue()).getString();
                 i++;
             }

@@ -1,11 +1,11 @@
 package traceprinter.ramtools;
-
+import java.util.Scanner;
 
 /****
 Usage: 
- - takes one command line argument, which is a class name;
+ - takes one or more command line arguments, the first of which is a class name;
  - takes stdin that is a JSON object, where "bytecodes" is a map from class names to bytecodes
- - loads those classes and runs args[0]'s public static void main(String[] args)
+ - loads those classes and runs args[0]'s public static void main(String[] args) on args[1..]
  - the first line of output is either 'Error' or 'Success'
  - Success means public static main(String[]) was found (we called Method.invoke), not that the invoke was trouble-free
 
@@ -61,6 +61,11 @@ public class RAMRun {
             
             for (Map.Entry<String, JsonValue> me : classes.entrySet()) {
                 String classname = me.getKey();
+                if (! (me.getValue() instanceof JsonString)) {
+                    System.out.println("Error: for key " + me.getKey() + " value is " + me.getValue().getClass() +":\n"
+                                       + me.getValue().toString());
+                    return; 
+                }
                 String classfile = ((JsonString)me.getValue()).getString();
 
                 byte[] bytecode = new byte[classfile.length()/2];
@@ -89,8 +94,11 @@ public class RAMRun {
             return;
         }
         try {
+            String[] newargs = new String[args.length-1];
+            for (int i=0; i<newargs.length; i++)
+                newargs[i] = args[i+1];
             System.out.println("Success: found "+args[0]+".main. Invoking...");
-            main.invoke(null, (Object)new String[0]);
+            main.invoke(null, (Object)newargs);
         } catch (IllegalAccessException e) {
             //System.out.println("Error: illegal access exception");
             e.printStackTrace();
