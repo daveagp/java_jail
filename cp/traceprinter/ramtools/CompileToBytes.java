@@ -77,11 +77,11 @@ public class CompileToBytes {
 
     output: A Json Object
     - status: "Internal Error", "Compile-Time Error", "Success"
-    - if "Internal Error": errmsg: describing the internal error; trace: stack trace
-    - if "Compile-Time Error": message, filename, line, col, (startpos, endpos)
-    - if "Success": bytecodes, (warning)
+    - if "Internal Error": errmsg: describing the internal error
+    - if "Compile-Time Error": error (errmsg, filename, row, col, startpos, pos, endpos)
+    - if "Success": bytecodes, [warning]
     
-    bytecodes is a map from class names (with .s and $s) to bytecodes
+    bytecodes is a map from class names (possibly including . and $) to bytecodes
 
     */
 
@@ -106,21 +106,33 @@ public class CompileToBytes {
             isr = new InputStreamReader(System.in, "UTF-8");
         }
         catch (UnsupportedEncodingException e) {
-            System.out.println("UnsupportedEncodingException!");
+            System.out.println(Json
+                               .createObjectBuilder()
+                               .add("status", "Internal Error")
+                               .add("errmsg", "Could not set UTF-8 encoding")
+                               .build());
             return;
         }
-        JsonReader jr = Json.createReader(isr);
-        JsonObject sourceFiles = jr.readObject();
 
-        String[][] pairs = new String[sourceFiles.size()][2];
-
-        {
+        String[][] pairs;
+        try {
+            JsonReader jr = Json.createReader(isr);
+            JsonObject sourceFiles = jr.readObject();
+            pairs = new String[sourceFiles.size()][2];
             int i = 0;
             for (Map.Entry<String, JsonValue> pair : sourceFiles.entrySet()) {
                 pairs[i][0] = pair.getKey();
                 pairs[i][1] = ((JsonString)pair.getValue()).getString();
                 i++;
             }
+        }
+        catch (Throwable t) {
+            System.out.println(Json
+                               .createObjectBuilder()
+                               .add("status", "Internal Error")
+                               .add("errmsg", "Could not parse input: " + t)
+                               .build());
+            return;            
         }
         
         CompileToBytes c2b = new CompileToBytes();
@@ -131,15 +143,34 @@ public class CompileToBytes {
         c2b.diagnosticListener = errorCollector;
 
         Map<String, byte[]> classMap = c2b.compileFiles(pairs);
-        
-        if (classMap == null) {
-            for (Diagnostic<? extends JavaFileObject> err : errorCollector.getDiagnostics())
-                if (err.getKind() == Diagnostic.Kind.ERROR) {
-                    System.out.println("Error: " + err.getMessage(null) + " " + err.getLineNumber() +
-                                       " " + err.getColumnNumber() + " " + err.getSource());
-                    return;
-                }
-            System.out.println("Compiler did not work, but reported no ERROR?!?!");
+
+        JsonObject jerr = null;
+        for (Diagnostic<? extends JavaFileObject> err : errorCollector.getDiagnostics()) {
+            jerr = Json.createObjectBuilder()
+                .add("filename", err.getSource().toString())
+                .add("row", err.getLineNumber())
+                .add("col", err.getColumnNumber())
+                .add("errmsg", err.getMessage(null))
+                .add("startpos", err.getStartPosition())
+                .add("pos", err.getPosition())
+                .add("endpos", err.getEndPosition())
+                .build();
+            if (err.getKind() == Diagnostic.Kind.ERROR) {
+                System.out.println(Json
+                                   .createObjectBuilder()
+                                   .add("status", "Compile-time Error")
+                                   .add("error", jerr)
+                                   .build());
+                return;
+            }
+        }
+
+        if (classMap == null && jerr == null) {
+            System.out.println(Json
+                               .createObjectBuilder()
+                               .add("status", "Internal Error")
+                               .add("errmsg", "Did not compile, but gave no errors!")
+                               .build());
             return;
         }
         
@@ -156,6 +187,10 @@ public class CompileToBytes {
             classFiles.add(pair.getKey(), new String(hexEncoding));
         }
 
-        System.out.println(classFiles.build().toString());
+        JsonObjectBuilder job = Json.createObjectBuilder();
+        job.add("status", "Success")
+            .add("bytecodes", classFiles.build());
+        if (jerr != null) job.add("warning", jerr);
+        System.out.println(job.build());
     }
 }

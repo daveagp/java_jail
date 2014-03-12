@@ -16,6 +16,8 @@ public class RAMJavaFile extends SimpleJavaFileObject {
      */
     private CharSequence content;
 
+    private String className;
+
     /**
      * This constructor will store the source code in the
      * internal "content" variable and register it as a
@@ -30,6 +32,11 @@ public class RAMJavaFile extends SimpleJavaFileObject {
         super(URI.create("string:///" + className.replace('.', '/')
                          + Kind.SOURCE.extension), Kind.SOURCE);
         this.content = content;
+        this.className = className;
+    }
+
+    public String toString() {
+        return className+".java";
     }
 
     /**
