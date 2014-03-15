@@ -22,6 +22,14 @@ public class ByteClassLoader extends ClassLoader {
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         byte[] bytecode = definitions.get(name);
+        if (bytecode == null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Asked ByteClassLoader for undefined class " + name);
+            sb.append(" --- Known: ");
+            for (String S : definitions.keySet())
+                sb.append(S+" ");
+            throw new RuntimeException(sb.toString());
+        }
         return defineClass(name, bytecode, 0, bytecode.length); 
     }
 
