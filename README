@@ -76,6 +76,9 @@ Installation steps:
 # to deny everything else:
 -A OUTPUT -m owner --gid-owner 1000 -j DROP
 
+If you want to allow connections to the outgoing world, particularly in Java,
+you will have to copy /etc/resolv.conf into the etc of the jail.
+
 === Testing ===
 
 Assuming you have CEMC safeexec (https://github.com/cemc/safeexec)
