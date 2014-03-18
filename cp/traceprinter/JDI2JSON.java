@@ -550,7 +550,7 @@ public class JDI2JSON {
         try {
             // this is the logical approach, but gives "Unexpected JDWP Error: 502" in invokeMethod
             // even if we suspend-and-resume the thread t
-            ThreadReference t = event.thread();
+	    /*            ThreadReference t = event.thread();
 	    Method mm = excType.methodsByName("getMessage").get(0);
 	    exc.disableCollection();
 	    t.stop(exc);
@@ -561,17 +561,17 @@ public class JDI2JSON {
             //t.resume();
 	    vm.resume();
             StringReference sr = (StringReference) v;
-            String detail = sr.value();
+            String detail = sr.value(); */
 
             // so instead we just look for the longest detailMessage
-            /*String detail = "";
+            String detail = "";
             for (Field ff: excType.allFields())
                 if (ff.name().equals("detailMessage")) {
                     StringReference sr = (StringReference) exc.getValue(ff);
                     String thisMsg = sr == null ? null : sr.value();
                     if (thisMsg != null && thisMsg.length() > detail.length())
                         detail = thisMsg;
-			}*/
+			}
 
             if (detail.equals(""))
                 return excType.name(); // NullPointerException has no detail msg
