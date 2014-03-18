@@ -545,8 +545,8 @@ public class JDI2JSON {
     String exceptionMessage(ExceptionEvent event) {
         ObjectReference exc = event.exception();
         ReferenceType excType = exc.referenceType();
-	System.out.println(exc.getClass());
-	System.out.println(excType.getClass());
+	//System.out.println(exc.getClass());
+	//System.out.println(excType.getClass());
         try {
             // this is the logical approach, but gives "Unexpected JDWP Error: 502" in invokeMethod
             // even if we suspend-and-resume the thread t
