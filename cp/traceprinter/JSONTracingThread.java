@@ -33,7 +33,7 @@ import javax.json.*;
 public class JSONTracingThread extends Thread {
 
     private final VirtualMachine vm;   // Running VM
-    private String[] no_breakpoint_requests = {"java.*", "javax.*", "sun.*", "com.sun.*"};
+    private String[] no_breakpoint_requests = {"java.*", "javax.*", "sun.*", "com.sun.*", "Stack", "Queue"};
 
     private boolean connected = true;  // Connected to VM
     private boolean vmDied = true;     // VMDeath occurred

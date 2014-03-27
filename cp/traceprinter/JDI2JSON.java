@@ -234,6 +234,9 @@ public class JDI2JSON {
     }    
 
     public boolean reportEventsAtLocation(Location loc) {
+	//System.out.println(loc);
+	if (loc.toString().contains("Queue") || loc.toString().contains("Stack"))
+	    return false;
 	return (!in_builtin_package(loc.toString()));
     }
     
@@ -426,10 +429,55 @@ public class JDI2JSON {
                 .build();
         }
         // do we need special cases for ClassObjectReference, ThreadReference,.... ?
-        
-        // now deal with Objects. 
-        else {
-            heap_done.add(obj.uniqueID());
+
+	else {
+	    if (obj.referenceType().name().endsWith(".Queue") ||
+		obj.referenceType().name().equals("Queue")) {
+		heap_done.add(obj.uniqueID());
+		ReferenceType rt = obj.referenceType();
+		Field length = rt.fieldByName("N");
+		int queueLength = ((IntegerValue)obj.getValue(length)).value();
+		result.add("LIST");
+		if (queueLength > 0) {
+		    Field first = rt.fieldByName("first");
+		    ObjectReference thisNode = (ObjectReference)obj.getValue(first);
+		    ReferenceType nodeRT = thisNode.referenceType();
+		    Field val = nodeRT.fieldByName("item");
+		    Field next = nodeRT.fieldByName("next");
+		    for (int i = 0; i < queueLength; i++) {
+			Value v = thisNode.getValue(val);
+			result.add(convertValue(v));
+			thisNode = (ObjectReference) thisNode.getValue(next);
+		    }
+		}
+		return result.build();
+	    }
+
+	    if (obj.referenceType().name().endsWith(".Stack") ||
+                obj.referenceType().name().equals("Stack")) {
+                heap_done.add(obj.uniqueID());
+                ReferenceType rt = obj.referenceType();
+                Field length = rt.fieldByName("N");
+                int queueLength = ((IntegerValue)obj.getValue(length)).value();
+                result.add("LIST");
+                if (queueLength > 0) {
+                    Field first = rt.fieldByName("first");
+                    ObjectReference thisNode = (ObjectReference)obj.getValue(first);
+                    ReferenceType nodeRT = thisNode.referenceType();
+                    Field val = nodeRT.fieldByName("item");
+                    Field next = nodeRT.fieldByName("next");
+                    for (int i = 0; i < queueLength; i++) {
+                        Value v = thisNode.getValue(val);
+                        result.add(convertValue(v));
+                        thisNode = (ObjectReference) thisNode.getValue(next);
+                    }
+                }
+                return result.build();
+            }
+
+	    
+	    // now deal with Objects. 
+	    heap_done.add(obj.uniqueID());
             result.add("INSTANCE");
             if (obj.referenceType().name().startsWith("java.lang.")
                 && wrapperTypes.contains(obj.referenceType().name().substring(10))) {
@@ -475,14 +523,14 @@ public class JDI2JSON {
                                                                            Json.createArrayBuilder().add("NUMBER-LITERAL").add(
                                                                                                                                convertValue(obj.getValue(f)))));
             }
-            return result.build(); 
-        }
+	    return result.build();
+	}
     }
 
     private JsonArray convertVoid = jsonArray("VOID");
-
+    
     private JsonArray jsonArray(Object... args) {
-        JsonArrayBuilder result = Json.createArrayBuilder();
+	JsonArrayBuilder result = Json.createArrayBuilder();
         for (Object o : args) {
             if (o instanceof JsonValue)
                 result.add((JsonValue)o);
