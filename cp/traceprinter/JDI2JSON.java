@@ -216,9 +216,12 @@ public class JDI2JSON {
         for (String badPrefix: builtin_packages)
             if (S.startsWith(badPrefix+"."))
                 return true;
-        for (String badClass: PU_stdlib)
+        for (String badClass: PU_stdlib) {
             if (S.equals(badClass)) 
                 return true;
+            if (S.startsWith(badClass+"$"))
+                return true;
+        }
         return false;
     }
 
@@ -234,9 +237,6 @@ public class JDI2JSON {
     }    
 
     public boolean reportEventsAtLocation(Location loc) {
-	//System.out.println(loc);
-	if (loc.toString().contains("Queue") || loc.toString().contains("Stack"))
-	    return false;
 	return (!in_builtin_package(loc.toString()));
     }
     
