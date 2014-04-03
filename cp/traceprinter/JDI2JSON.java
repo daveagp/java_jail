@@ -437,7 +437,7 @@ public class JDI2JSON {
 		ReferenceType rt = obj.referenceType();
 		Field length = rt.fieldByName("N");
 		int queueLength = ((IntegerValue)obj.getValue(length)).value();
-		result.add("LIST");
+		result.add("QUEUE");
 		if (queueLength > 0) {
 		    Field first = rt.fieldByName("first");
 		    ObjectReference thisNode = (ObjectReference)obj.getValue(first);
@@ -459,7 +459,7 @@ public class JDI2JSON {
                 ReferenceType rt = obj.referenceType();
                 Field length = rt.fieldByName("N");
                 int queueLength = ((IntegerValue)obj.getValue(length)).value();
-                result.add("LIST");
+                result.add("STACK");
                 if (queueLength > 0) {
                     Field first = rt.fieldByName("first");
                     ObjectReference thisNode = (ObjectReference)obj.getValue(first);
