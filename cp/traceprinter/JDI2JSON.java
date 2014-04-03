@@ -99,7 +99,7 @@ public class JDI2JSON {
 
 	ArrayList<JsonObject> results = new ArrayList<>();
 
-        if (loc.method().name().indexOf('$')>=0) return results; // don't visualize synthetic access$000 methods
+        if (loc.method().name().indexOf("access$")>=0) return results; // don't visualize synthetic access$000 methods
         
         heap_done = new TreeSet<Long>();
         heap = new TreeMap<>();

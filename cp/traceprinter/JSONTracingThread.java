@@ -33,7 +33,9 @@ import javax.json.*;
 public class JSONTracingThread extends Thread {
 
     private final VirtualMachine vm;   // Running VM
-    private String[] no_breakpoint_requests = {"java.*", "javax.*", "sun.*", "com.sun.*", "Stack", "Queue"};
+    private String[] no_breakpoint_requests = {"java.*", "javax.*", "sun.*", "com.sun.*", "Stack", "Queue",
+                                               "jdk.internal.org.objectweb.asm.*" // for creating lambda classes
+    };
 
     private boolean connected = true;  // Connected to VM
     private boolean vmDied = true;     // VMDeath occurred
@@ -279,7 +281,8 @@ public class JSONTracingThread extends Thread {
             }
         }
         catch (AbsentInformationException e) {
-            System.out.println("AIE!");
+            if (!rt.name().contains("$Lambda$"))
+                System.out.println("AIE!" + rt.name());
         }
     }
 
