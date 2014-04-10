@@ -144,7 +144,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
     }
 
     private int rCounter(Node n) {
-	if (n == null) return 0;
+	if (n == null || n.value == null) return 0;
 	else return (1+rCounter(n.left)+rCounter(n.right));
     }
     /**

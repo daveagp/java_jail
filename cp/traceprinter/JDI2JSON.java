@@ -493,8 +493,10 @@ public class JDI2JSON {
 			Field key = nt.fieldByName("key");
 			Field value = nt.fieldByName("value");
 			loadResultFromSymbolTree((ObjectReference)n.getValue(left), result);
-			result.add(Json.createArrayBuilder().add(convertValue(n.getValue(key)))
-				   .add(convertValue(n.getValue(value))).build());
+			if (n.getValue(value) != null) {
+			    result.add(Json.createArrayBuilder().add(convertValue(n.getValue(key)))
+				       .add(convertValue(n.getValue(value))).build());
+			}
 			loadResultFromSymbolTree((ObjectReference)n.getValue(right), result);
 		    }
 		}
