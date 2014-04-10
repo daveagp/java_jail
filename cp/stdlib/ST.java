@@ -91,25 +91,28 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
 	if (first == null)
 	    first = add;
 	else {
-	    Node n = first;
-	    if (key.compareTo(n.key) < 0) {
-		if (n.left == null) {
-		    n.left = add;
-		    return;
-		}
-		n.left = n;
-	    }
-	    else if (key.compareTo(n.key) > 0) {
-		if (n.right == null) {
-		    n.right = add;
-		    return;
-		}
-		n.right = n;
-	    }
-	    else {
-		n.value = val;
-	    }
-	}
+            Node n = first;
+            while (true) {
+                if (key.compareTo(n.key) < 0) {
+                    if (n.left == null) {
+                        n.left = add;
+                        return;
+                    }
+                    n = n.left;
+                }
+                else if (key.compareTo(n.key) > 0) {
+                    if (n.right == null) {
+                        n.right = add;
+                        return;
+                    }
+                    n = n.right;
+                }
+                else {
+                    n.value = val;
+                    return;
+                }
+            }
+        }
     }
 
     /**

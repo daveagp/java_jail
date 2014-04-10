@@ -402,6 +402,11 @@ public class JDI2JSON {
          ("Byte Short Integer Long Float Double Character Boolean".split(" ")));
 
     private JsonValue convertObject(ObjectReference obj, boolean fullVersion) {
+        if (showStringsAsValues && obj.referenceType().name().startsWith("java.lang.")
+            && wrapperTypes.contains(obj.referenceType().name().substring(10))) {
+            return convertValue(obj.getValue(obj.referenceType().fieldByName("value")));
+        }
+
         JsonArrayBuilder result = Json.createArrayBuilder();
 
 	// abbreviated versions are for references to objects
@@ -492,6 +497,7 @@ public class JDI2JSON {
 			Field right = nt.fieldByName("right");
 			Field key = nt.fieldByName("key");
 			Field value = nt.fieldByName("value");
+                        //System.out.println(n.uniqueID());
 			loadResultFromSymbolTree((ObjectReference)n.getValue(left), result);
 			if (n.getValue(value) != null) {
 			    result.add(Json.createArrayBuilder().add(convertValue(n.getValue(key)))

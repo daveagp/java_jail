@@ -46,6 +46,10 @@ public class JSONTracingThread extends Thread {
 
     static int MAX_STEPS = 256;
 
+    static double MAX_TIME_SECONDS = 3;
+
+    private long startTime = System.currentTimeMillis();
+
     private int steps = 0;
 
     static int MAX_STACK_SIZE = 16;
@@ -109,7 +113,28 @@ public class JSONTracingThread extends Thread {
             try {
                 final EventSet eventSet = queue.remove();
                 for (Event ev : new Iterable<Event>(){public Iterator<Event> iterator(){return eventSet.eventIterator();}}) {
-                    //System.out.println("in run: " + steps+" "+ev);
+
+
+                    //System.out.println("in run: " + steps+" "+ev+" "+(System.currentTimeMillis()-startTime));
+
+                    //        System.out.println(currentTimeMillis());
+                    if (System.currentTimeMillis() > MAX_TIME_SECONDS * 1000 + startTime) {
+                        output.add(Json.createObjectBuilder()
+                                   .add("exception_msg", "<exceeded max visualizer time limit>")
+                                   .add("event", "instruction_limit_reached"));
+                        
+                        try { 
+                            PrintStream out = new PrintStream(System.out, true, "UTF-8");
+                            String outputString = JDI2JSON.output(usercode, output.build()).toString();
+                            out.print(outputString);
+                        } catch (UnsupportedEncodingException e) {
+                            System.out.print("UEE");
+                            }
+                        System.exit(0);
+                        vm.exit(0); // might take a long time
+                    }
+
+
                     handleEvent(ev);
                     if (request != null && request.isEnabled()) {
                         request.disable();
@@ -207,17 +232,18 @@ public class JSONTracingThread extends Thread {
 			steps++;	  
                         int stackSize = ((JsonArray)ep.get("stack_to_render")).size();
 
+                        boolean quit = false;
                         if (stackSize >= MAX_STACK_SIZE) {
                             output.add(Json.createObjectBuilder()
                                        .add("exception_msg", "<exceeded max visualizer stack size>")
                                        .add("event", "instruction_limit_reached"));
-			    vm.exit(0);
+                            quit = true;
                         }
 			if (steps == MAX_STEPS) {
                             output.add(Json.createObjectBuilder()
                                        .add("exception_msg", "<exceeded max visualizer step limit>")
                                        .add("event", "instruction_limit_reached"));
-			    vm.exit(0);
+			    quit = true;
 			}
 		    }
                     if (event instanceof ExceptionEvent && ((ExceptionEvent)event).catchLocation()==null) {
