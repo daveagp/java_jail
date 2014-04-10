@@ -33,7 +33,7 @@ import javax.json.*;
 public class JSONTracingThread extends Thread {
 
     private final VirtualMachine vm;   // Running VM
-    private String[] no_breakpoint_requests = {"java.*", "javax.*", "sun.*", "com.sun.*", "Stack", "Queue",
+    private String[] no_breakpoint_requests = {"java.*", "javax.*", "sun.*", "com.sun.*", "Stack", "Queue", "ST",
                                                "jdk.internal.org.objectweb.asm.*" // for creating lambda classes
     };
 

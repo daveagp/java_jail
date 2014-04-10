@@ -208,7 +208,7 @@ public class JDI2JSON {
                                   "Copy", "Draw", "DrawListener", "In", "InTest",
                                   "Out", "Picture", "StdArrayIO", "StdAudio",
                                   "StdDraw", "StdDraw3D", "StdIn", "StdInTest",
-                                        "StdOut", "StdRandom", "StdStats", "Stopwatch", "Stack", "Queue", "ST", "Point"};
+                                        "StdOut", "StdRandom", "StdStats", "Stopwatch", "Stack", "Queue", "ST", "Point", "ST"};
 
     // input format: [package.]ClassName:lineno or [package.]ClassName
     public boolean in_builtin_package(String S) {
@@ -401,22 +401,6 @@ public class JDI2JSON {
         (Arrays.asList
          ("Byte Short Integer Long Float Double Character Boolean".split(" ")));
 
-    // Recursively add the key, value pairs to the result with an attempt to sort.
-    // Also, convert to an anonymous function, sorry, 'Lambda Expression'
-    private void handleBinarySymbolTree(ObjectReference n, JsonArrayBuilder result) {
-	if (n == null)
-	    return;
-	ReferenceType nt = n.referenceType();
-	Field left = nt.fieldByName("left");
-	Field right = nt.fieldByName("right");
-	Field key = nt.fieldByName("key");
-	Field value = nt.fieldByName("value");
-	handleBinarySymbolTree((ObjectReference)n.getValue(left), result);
-	result.add(Json.createArrayBuilder().add(convertValue(n.getValue(key)))
-		   .add(convertValue(n.getValue(value))).build());
-	handleBinarySymbolTree((ObjectReference)n.getValue(right), result);
-    }
-
     private JsonValue convertObject(ObjectReference obj, boolean fullVersion) {
         JsonArrayBuilder result = Json.createArrayBuilder();
 
@@ -491,14 +475,31 @@ public class JDI2JSON {
                 return result.build();
             }
 
-	    if (obj.referenceType().name().endsWith(".STS") ||
-		obj.referenceType().name().equals("STS")) {
+	    if (obj.referenceType().name().endsWith(".ST") ||
+		obj.referenceType().name().equals("ST")) {
 		heap_done.add(obj.uniqueID());
 		ReferenceType rt = obj.referenceType();
-		result.add("DICT");
+		result.add("ST");
 		Field first = rt.fieldByName("first");
 		ObjectReference firstNode = (ObjectReference)obj.getValue(first);
-		handleBinarySymbolTree(firstNode, result); //recursively add key, value pairs to the result
+
+		class stHandler {
+		    public void loadResultFromSymbolTree(ObjectReference n, JsonArrayBuilder result) {
+			if (n == null)
+			    return;
+			ReferenceType nt = n.referenceType();
+			Field left = nt.fieldByName("left");
+			Field right = nt.fieldByName("right");
+			Field key = nt.fieldByName("key");
+			Field value = nt.fieldByName("value");
+			loadResultFromSymbolTree((ObjectReference)n.getValue(left), result);
+			result.add(Json.createArrayBuilder().add(convertValue(n.getValue(key)))
+				   .add(convertValue(n.getValue(value))).build());
+			loadResultFromSymbolTree((ObjectReference)n.getValue(right), result);
+		    }
+		}
+		
+		new stHandler().loadResultFromSymbolTree(firstNode, result); //recursively add key, value pairs to the result
 		return result.build();
 	    }
 
