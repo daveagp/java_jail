@@ -12,7 +12,7 @@
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.SortedMap;
-import java.util.HashSet;
+import java.util.TreeMap;
 
 /**
  *  The <tt>ST</tt> class represents an ordered symbol table of generic
@@ -44,14 +44,16 @@ import java.util.HashSet;
  *  <i>Introduction to Programming in Java: An Interdisciplinary Approach</i> by Robert Sedgewick and Kevin Wayne. 
  */
 public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
-    private class Node {
-	Key key;
-	Value value;
-	Node left;
-	Node right;
+
+    private TreeMap<Key, Value> st;
+
+    /**
+     * Initializes an empty symbol table.
+     */
+    public ST() {
+        st = new TreeMap<Key, Value>();
     }
 
-    private Node first;
 
     /**
      * Returns the value associated with the given key.
@@ -62,16 +64,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Value get(Key key) {
         if (key == null) throw new NullPointerException("called get() with null key");
-        Node n = first;
-	while (n != null) {
-	    if (key.compareTo(n.key) < 0)
-		n = n.left;
-	    else if (key.compareTo(n.key) > 0)
-		n = n.right;
-	    else
-		return n.value;
-	}
-	return null;
+        return st.get(key);
     }
 
     /**
@@ -84,32 +77,8 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public void put(Key key, Value val) {
         if (key == null) throw new NullPointerException("called put() with null key");
-	//if (val == null) return delete(key); // restore this once delete is implemented.
-	Node add = new Node();
-	add.key = key;
-	add.value = val;
-	if (first == null)
-	    first = add;
-	else {
-	    Node n = first;
-	    if (key.compareTo(n.key) < 0) {
-		if (n.left == null) {
-		    n.left = add;
-		    return;
-		}
-		n.left = n;
-	    }
-	    else if (key.compareTo(n.key) > 0) {
-		if (n.right == null) {
-		    n.right = add;
-		    return;
-		}
-		n.right = n;
-	    }
-	    else {
-		n.value = val;
-	    }
-	}
+        if (val == null) st.remove(key);
+        else             st.put(key, val);
     }
 
     /**
@@ -120,7 +89,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public void delete(Key key) {
         if (key == null) throw new NullPointerException("called delete() with null key");
-	put(key, null); // simply put a null value for now. nulls arent allowed in the tree anyways. TODO: fix.
+        st.remove(key);
     }
 
     /**
@@ -132,7 +101,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public boolean contains(Key key) {
         if (key == null) throw new NullPointerException("called contains() with null key");
-	return (get(key) != null);
+        return st.containsKey(key);
     }
 
     /**
@@ -140,13 +109,9 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      * @return the number of key-value pairs in this symbol table
      */
     public int size() {
-        return rCounter(first);
+        return st.size();
     }
 
-    private int rCounter(Node n) {
-	if (n == null || n.value == null) return 0;
-	else return (1+rCounter(n.left)+rCounter(n.right));
-    }
     /**
      * Is this symbol table empty?
      * @return <tt>true</tt> if this symbol table is empty and <tt>false</tt> otherwise
@@ -162,18 +127,8 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      * @return all keys in the sybol table as an <tt>Iterable</tt>
      */
     public Iterable<Key> keys() {
-	HashSet<Key> keys = new HashSet<Key>();
-	return rKeys(keys, first);
+        return st.keySet();
     }
-
-    private  HashSet<Key> rKeys(HashSet<Key> keys, Node n) { //TODO: make the keys print in some nicer order?
-	if (n != null) {
-	    rKeys(keys, n.right);
-	    keys.add(n.key);
-	    rKeys(keys, n.left);
-	}
-	return keys;
-    } 
 
     /**
      * Returns all of the keys in the symbol table as an iterator.
@@ -182,7 +137,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      * @return an iterator to all of the keys in the symbol table
      */
     public Iterator<Key> iterator() {
-        return keys().iterator();
+        return st.keySet().iterator();
     }
 
     /**
@@ -192,10 +147,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Key min() {
         if (isEmpty()) throw new NoSuchElementException("called min() with empty symbol table");
-	Node n = first;
-	while (n.left != null)
-	    n = n.left;
-	return n.key;
+        return st.firstKey();
     }
 
     /**
@@ -205,10 +157,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Key max() {
         if (isEmpty()) throw new NoSuchElementException("called max() with empty symbol table");
-	Node n = first;
-	while (n.right != null)
-	    n = n.right;
-	return n.key;
+        return st.lastKey();
     }
 
     /**
@@ -220,8 +169,9 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Key ceil(Key key) {
         if (key == null) throw new NullPointerException("called ceil() with null key");
-	// Add all the keys greater to a set, then sort and return min?
-	throw new RuntimeException("didnt bother inplementing ceil yet");
+        SortedMap<Key, Value> tail = st.tailMap(key);
+        if (tail.isEmpty()) throw new NoSuchElementException();
+        return tail.firstKey();
     }
 
     /**
@@ -233,8 +183,11 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Key floor(Key key) {
         if (key == null) throw new NullPointerException("called floor() with null key");
-	// Take similar approach to ceil?
-	throw new RuntimeException("didnt bother inplementing ceil yet");
+        // headMap does not include key if present (!)
+        if (st.containsKey(key)) return key;
+        SortedMap<Key, Value> head = st.headMap(key);
+        if (head.isEmpty()) throw new NoSuchElementException();
+        return head.lastKey();
     }
 
     /**
