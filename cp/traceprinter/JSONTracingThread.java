@@ -245,6 +245,8 @@ public class JSONTracingThread extends Thread {
                                        .add("event", "instruction_limit_reached"));
 			    quit = true;
 			}
+                        if (quit)
+                            vm.exit(0);
 		    }
                     if (event instanceof ExceptionEvent && ((ExceptionEvent)event).catchLocation()==null) {
                         vm.exit(0);
