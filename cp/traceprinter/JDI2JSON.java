@@ -418,13 +418,41 @@ public class JDI2JSON {
 
 	// full versions are for describing the objects themselves,
 	// in the heap
+
         else if (obj instanceof ArrayReference) {
-	    result.add("LIST");
-	    heap_done.add(obj.uniqueID());
-	    for (Value v : ((ArrayReference)obj).getValues()) {
-		result.add(convertValue(v));
-	    }
-	    return result.build();
+            ArrayReference ao = (ArrayReference)obj;
+            int L = ao.length();
+            result.add("LIST");
+            heap_done.add(obj.uniqueID());
+
+            class Help {
+                // is it a zero integer?
+                boolean isz(Value v) {
+                    return v instanceof IntegerValue && ((IntegerValue)v).intValue() == 0;
+                }
+            }
+            Help help = new Help();
+
+
+            for (int i=0; i<L; i++) {
+                // hack for markov
+                if (help.isz(ao.getValue(i))) {
+                    // j is the next nonzero after i
+                    int j=i+1;
+                    while (j<L && help.isz(ao.getValue(j))) 
+                        j++;
+                    if (j-i >= 4) {
+                        result.add(convertValue(ao.getValue(i)));
+                        result.add(Json.createArrayBuilder().add("ELIDE").add(j-i-2));
+                        result.add(convertValue(ao.getValue(j-1)));
+                    }
+                    else for (int k=i; k<j; k++) 
+                        result.add(convertValue(ao.getValue(k)));
+                    i = j-1; // don't redo them all
+                }
+                else result.add(convertValue(ao.getValue(i)));
+            }
+            return result.build();
 	}
         else if (obj instanceof StringReference) {
             return Json.createArrayBuilder()

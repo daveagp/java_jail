@@ -46,7 +46,7 @@ public class JSONTracingThread extends Thread {
 
     static int MAX_STEPS = 256;
 
-    static double MAX_TIME_SECONDS = 3;
+    static double MAX_TIME_SECONDS = 5;
 
     private long startTime = System.currentTimeMillis();
 
