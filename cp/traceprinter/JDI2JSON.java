@@ -512,7 +512,7 @@ public class JDI2JSON {
 		obj.referenceType().name().equals("ST")) {
 		heap_done.add(obj.uniqueID());
 		ReferenceType rt = obj.referenceType();
-		result.add("ST");
+		result.add("DICT");
 		Field first = rt.fieldByName("first");
 		ObjectReference firstNode = (ObjectReference)obj.getValue(first);
 
