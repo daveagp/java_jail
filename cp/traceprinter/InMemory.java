@@ -39,6 +39,8 @@ public class InMemory {
     VirtualMachine vm;
     Map<String, byte[]> bytecode;
 
+    public final static long startTime = System.currentTimeMillis();
+
     public static void main(String[] args) {
 
         JDI2JSON.userlog("Debugger VM maxMemory: " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "M");    
@@ -87,6 +89,8 @@ public class InMemory {
                 JSONTracingThread.MAX_STEPS = visualizer_args.getJsonNumber("MAX_STEPS").intValue();
             if (visualizer_args.getJsonNumber("MAX_STACK_SIZE") != null)
                 JSONTracingThread.MAX_STACK_SIZE = visualizer_args.getJsonNumber("MAX_STACK_SIZE").intValue();
+            if (visualizer_args.getJsonNumber("MAX_WALLTIME_SECONDS") != null)
+                JSONTracingThread.MAX_WALLTIME_SECONDS = visualizer_args.getJsonNumber("MAX_WALLTIME_SECONDS").intValue();
         }
 
         // not 100% accurate, if people have multiple top-level classes + public inner classes

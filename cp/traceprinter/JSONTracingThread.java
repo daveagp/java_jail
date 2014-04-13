@@ -46,9 +46,7 @@ public class JSONTracingThread extends Thread {
 
     static int MAX_STEPS = 256;
 
-    static double MAX_TIME_SECONDS = 5;
-
-    private long startTime = System.currentTimeMillis();
+    static double MAX_WALLTIME_SECONDS = 5;
 
     private int steps = 0;
 
@@ -118,7 +116,7 @@ public class JSONTracingThread extends Thread {
                     //System.out.println("in run: " + steps+" "+ev+" "+(System.currentTimeMillis()-startTime));
 
                     //        System.out.println(currentTimeMillis());
-                    if (System.currentTimeMillis() > MAX_TIME_SECONDS * 1000 + startTime) {
+                    if (System.currentTimeMillis() > MAX_WALLTIME_SECONDS * 1000 + InMemory.startTime) {
                         output.add(Json.createObjectBuilder()
                                    .add("exception_msg", "<exceeded max visualizer time limit>")
                                    .add("event", "instruction_limit_reached"));
