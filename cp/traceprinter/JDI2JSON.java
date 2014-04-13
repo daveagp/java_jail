@@ -545,7 +545,7 @@ public class JDI2JSON {
             if (obj.referenceType().name().startsWith("java.lang.")
                 && wrapperTypes.contains(obj.referenceType().name().substring(10))) {
                 result.add(obj.referenceType().name().substring(10));
-                result.add(jsonArray(jsonArray("NO-LABEL"),
+                result.add(jsonArray("___NO_LABEL!___",//jsonArray("NO-LABEL"), // don't show a label or label cell for wrapper instance field
                                      convertValue(obj.getValue(obj.referenceType().fieldByName("value")))));
             }
             else {
