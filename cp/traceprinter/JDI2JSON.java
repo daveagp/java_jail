@@ -462,10 +462,9 @@ public class JDI2JSON {
                 .build();
         }
         // do we need special cases for ClassObjectReference, ThreadReference,.... ?
-
+        // stack and queue handling code by Will Gwozdz
 	else {
-	    if (obj.referenceType().name().endsWith(".Queue") ||
-		obj.referenceType().name().equals("Queue")) {
+	    if (obj.referenceType().name().equals("Queue")) {
 		heap_done.add(obj.uniqueID());
 		ReferenceType rt = obj.referenceType();
 		Field length = rt.fieldByName("N");
@@ -486,8 +485,7 @@ public class JDI2JSON {
 		return result.build();
 	    }
 
-	    if (obj.referenceType().name().endsWith(".Stack") ||
-                obj.referenceType().name().equals("Stack")) {
+	    if (obj.referenceType().name().equals("Stack")) {
                 heap_done.add(obj.uniqueID());
                 ReferenceType rt = obj.referenceType();
                 Field length = rt.fieldByName("N");
@@ -508,8 +506,8 @@ public class JDI2JSON {
                 return result.build();
             }
 
-	    if (obj.referenceType().name().endsWith(".ST") ||
-		obj.referenceType().name().equals("ST")) {
+            // st handling code by Will Gwozdz
+	    if (obj.referenceType().name().equals("ST")) {
 		heap_done.add(obj.uniqueID());
 		ReferenceType rt = obj.referenceType();
 		result.add("DICT");

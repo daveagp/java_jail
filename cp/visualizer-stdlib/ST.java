@@ -9,6 +9,8 @@
  *
  *************************************************************************/
 
+// This modified version by Will Gwozdz to make it visualizable!
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.SortedMap;
