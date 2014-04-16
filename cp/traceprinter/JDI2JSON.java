@@ -227,7 +227,7 @@ public class JDI2JSON {
 
     private boolean showFramesInLocation(Location loc) {
 	return (!in_builtin_package(loc.toString())
-                && !loc.method().name().contains("$"));
+                && !loc.method().name().contains("$access"));
         // skip synthetic accessor methods
     }
 
@@ -330,19 +330,18 @@ public class JDI2JSON {
             int offset = 0;
             for (LocalVariable lv : frame_vars) 
                 if (!lv.isArgument()) 
-                    if (!lv.name().endsWith("$")) { // skip for-loop synthetics
-                        try {
-                            result.add(lv.name(),
-                                       convertValue(sf.getValue(lv)));
-                            if (orderByHash == null) {
-                                offset = lv.hashCode();
-                                orderByHash = new TreeMap<>();
-                            }
-                            orderByHash.put(lv.hashCode() - offset, lv.name());
+                    //if (!lv.name().endsWith("$")) { // skip for-loop synthetics?
+                    try {
+                        result.add(lv.name(),
+                                   convertValue(sf.getValue(lv)));
+                        if (orderByHash == null) {
+                            offset = lv.hashCode();
+                            orderByHash = new TreeMap<>();
                         }
-                        catch (IllegalArgumentException exc) {
-                            // variable not yet defined, don't list it
-                        }
+                        orderByHash.put(lv.hashCode() - offset, lv.name());
+                    }
+                    catch (IllegalArgumentException exc) {
+                        // variable not yet defined, don't list it
                     }
             if (orderByHash != null) // maybe no local vars
                 for (Map.Entry<Integer,String> me : orderByHash.entrySet())
@@ -548,7 +547,28 @@ public class JDI2JSON {
             }
             else {
                 String fullName = obj.referenceType().name();
-                if (fullName.indexOf('$') > 0) fullName=fullName.substring(1+fullName.indexOf('$'));
+                if (fullName.indexOf("$") > 0) {
+                    // inner, local, anonymous or lambda class
+                    if (fullName.contains("$$Lambda")) {
+                        fullName = "&lambda;" + fullName.substring(fullName.indexOf("$$Lambda")+9); // skip $$lambda$
+                        try {
+                            String interf = ((ClassType)obj.referenceType()).interfaces().get(0).name();
+                            if (interf.startsWith("java.util.function."))
+                                interf = interf.substring(19);
+                            
+                            fullName += " ["+interf+"]";
+                        }
+                        catch (Exception e) {}
+                    }
+                    // more cases here?
+                    else {
+                        fullName=fullName.substring(1+fullName.indexOf('$'));
+                        if (fullName.matches("[0-9]+"))
+                            fullName = "anonymous class " + fullName;
+                        else if (fullName.substring(0, 1).matches("[0-9]+"))
+                            fullName = "local class " + fullName.substring(1);
+                    }
+                }
                 result.add(fullName);
             }
             if (showGuts(obj.referenceType())) {
@@ -564,7 +584,7 @@ public class JDI2JSON {
                          .entrySet()
                      ) {
                     if (!me.getKey().isStatic()
-                        && !me.getKey().isSynthetic() // uncomment to hide synthetic fields (this$0 or val$lv)
+                        && (showAllFields || !me.getKey().isSynthetic())
                         )
                         result.add(Json.createArrayBuilder()
                                    .add
@@ -576,8 +596,7 @@ public class JDI2JSON {
                                    .add(convertValue(me.getValue())));
                 }
             }
-            else if (obj.referenceType().name().endsWith(".Stopwatch") ||
-                     obj.referenceType().name().equals("Stopwatch")) {
+            else if (obj.referenceType().name().equals("Stopwatch")) {
                 ReferenceType rt = obj.referenceType();
                 Field f = rt.fieldByName("startString");
                 result.add(Json.createArrayBuilder().add("started at").add(
