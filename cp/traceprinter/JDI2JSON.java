@@ -341,18 +341,19 @@ public class JDI2JSON {
             int offset = 0;
             for (LocalVariable lv : frame_vars) 
                 if (!lv.isArgument()) 
-                    //if (!lv.name().endsWith("$")) { // skip for-loop synthetics?
-                    try {
-                        result.add(lv.name(),
-                                   convertValue(sf.getValue(lv)));
-                        if (orderByHash == null) {
-                            offset = lv.hashCode();
-                            orderByHash = new TreeMap<>();
+                    if (showAllFields || !lv.name().endsWith("$")) { // skip for-loop synthetics (exists in Java 7, but not 8)
+                        try {
+                            result.add(lv.name(),
+                                       convertValue(sf.getValue(lv)));
+                            if (orderByHash == null) {
+                                offset = lv.hashCode();
+                                orderByHash = new TreeMap<>();
+                            }
+                            orderByHash.put(lv.hashCode() - offset, lv.name());
                         }
-                        orderByHash.put(lv.hashCode() - offset, lv.name());
-                    }
-                    catch (IllegalArgumentException exc) {
-                        // variable not yet defined, don't list it
+                        catch (IllegalArgumentException exc) {
+                            // variable not yet defined, don't list it
+                        }
                     }
             if (orderByHash != null) // maybe no local vars
                 for (Map.Entry<Integer,String> me : orderByHash.entrySet())
