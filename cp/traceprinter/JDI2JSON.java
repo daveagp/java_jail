@@ -237,8 +237,18 @@ public class JDI2JSON {
     }    
 
     public boolean reportEventsAtLocation(Location loc) {
-        return loc.lineNumber() >= 1 &&  // lambda stuff may have no line#
-            (!in_builtin_package(loc.toString()));
+        if (in_builtin_package(loc.toString())) 
+            return false;
+
+        if (loc.toString().contains("$$Lambda$"))
+            return false;
+ 
+        if (loc.lineNumber() <= 0) {
+            userlog(loc.toString());
+            return true;
+        }
+
+        return true;
     }
     
     private JsonObject createReturnEventFrom(Location loc, JsonObject base_ep, JsonValue returned) {
