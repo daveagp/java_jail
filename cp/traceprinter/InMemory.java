@@ -183,6 +183,8 @@ http://docs.oracle.com/javase/7/docs/jdk/api/jpda/jdi/com/sun/jdi/connect/Connec
             
             options += "-Dfile.encoding=UTF-8" + " ";
 
+            options += "-Djava.awt.headless=true" + " ";
+
             ((Connector.Argument)(args.get("options"))).setValue(options);
             
             //	    System.out.println("About to call LaunchingConnector.launch...");
