@@ -126,7 +126,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public void delete(Key key) {
         if (key == null) throw new NullPointerException("called delete() with null key");
-	put(key, null); // simply put a null value for now. nulls arent allowed in the tree anyways. TODO: fix.
+	put(key, null); // simply put a null value for now. a node with a null value counts as deleted.
     }
 
     /**
@@ -172,7 +172,7 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
 	return rKeys(keys, first);
     }
 
-    private  Set<Key> rKeys(Set<Key> keys, Node n) { //TODO: make the keys print in some nicer order?
+    private  Set<Key> rKeys(Set<Key> keys, Node n) { 
 	if (n != null) {
 	    rKeys(keys, n.right);
 	    if (n.value != null)
@@ -227,7 +227,6 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Key ceil(Key key) {
         if (key == null) throw new NullPointerException("called ceil() with null key");
-	// Add all the keys greater to a set, then sort and return min?
 	throw new RuntimeException("didnt bother inplementing ceil yet");
     }
 
@@ -240,7 +239,6 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      */
     public Key floor(Key key) {
         if (key == null) throw new NullPointerException("called floor() with null key");
-	// Take similar approach to ceil?
 	throw new RuntimeException("didnt bother inplementing ceil yet");
     }
 
