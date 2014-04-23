@@ -207,7 +207,7 @@ public class JDI2JSON {
     public static String[] PU_stdlib = {"BinaryIn", "BinaryOut", "BinaryStdIn", "BinaryStdOut",
                                   "Copy", "Draw", "DrawListener", "In", "InTest",
                                   "Out", "Picture", "StdArrayIO", "StdAudio",
-                                  "StdDraw", "StdDraw3D", "StdIn", "StdInTest",
+                                        "StdDraw", "StdDraw3D", "StdIn", "StdInTest",
                                         "StdOut", "StdRandom", "StdStats", "Stopwatch", "Stack", "Queue", "ST", "Point", "ST"};
 
     // input format: [package.]ClassName:lineno or [package.]ClassName

@@ -48,15 +48,19 @@ public class VMCommandee {
             return "Internal error invoking main";
         }
         catch (InvocationTargetException e) {
-            RuntimeException throwMe = null;
-            try {
-                // throw it again in a way that the tracer can see it
-                throwMe = (RuntimeException)e.getTargetException();
-            }
-            catch (ClassCastException cce) {
-                return "Internal error handling exception";
-            }
-            throw throwMe;
+            if (e.getTargetException() instanceof RuntimeException)
+                throw (RuntimeException)(e.getTargetException());
+
+            
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.getTargetException().printStackTrace(pw);
+
+            return "Internal error handling error " + e.getTargetException() + sw.toString();
+
+            //if (e.getTargetException() instanceof Error)
+            //  throw (Error)(e.getTargetException());
+            
         }
     }
 

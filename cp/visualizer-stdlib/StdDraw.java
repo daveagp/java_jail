@@ -45,6 +45,8 @@ import javax.swing.*;
  */
 public final class StdDraw implements ActionListener, MouseListener, MouseMotionListener, KeyListener {
 
+    static final boolean isVisualizer = true;
+
     // pre-defined colors
     public static final Color BLACK      = Color.BLACK;
     public static final Color BLUE       = Color.BLUE;
@@ -107,7 +109,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
     private static Object keyLock = new Object();
 
     // default font
-    private static final Font DEFAULT_FONT = new Font("SansSerif", Font.PLAIN, 16);
+    private static final Font DEFAULT_FONT = isVisualizer ? null : new Font("SansSerif", Font.PLAIN, 16);
 
     // current font
     private static Font font;
@@ -117,7 +119,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
     private static Graphics2D offscreen, onscreen;
 
     // singleton for callbacks: avoids generation of extra .class files
-    private static StdDraw std = new StdDraw();
+    private static StdDraw std = isVisualizer ? null : new StdDraw();
 
     // the frame for drawing to the screen
     private static JFrame frame;
@@ -128,10 +130,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
     private static double mouseY = 0;
 
     // queue of typed key characters
-    private static LinkedList<Character> keysTyped = new LinkedList<Character>();
+    private static LinkedList<Character> keysTyped = isVisualizer ? null : new LinkedList<Character>();
 
     // set of key codes currently pressed down
-    private static TreeSet<Integer> keysDown = new TreeSet<Integer>();
+    private static TreeSet<Integer> keysDown = isVisualizer ? null : new TreeSet<Integer>();
   
 
     // singleton pattern: client can't instantiate
@@ -139,12 +141,13 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 
 
     // static initializer
-    static { init(); }
+    static { if (!isVisualizer) init(); }
 
     /**
      * Set the window size to the default size 512-by-512 pixels.
      */
     public static void setCanvasSize() {
+        if (isVisualizer) return;
         setCanvasSize(DEFAULT_SIZE, DEFAULT_SIZE);
     }
 
@@ -156,6 +159,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws a IllegalArgumentException if the width or height is 0 or negative
      */
     public static void setCanvasSize(int w, int h) {
+        if (isVisualizer) return;
         if (w < 1 || h < 1) throw new IllegalArgumentException("width and height must be positive");
         width = w;
         height = h;
@@ -164,6 +168,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 
     // init
     private static void init() {
+        if (isVisualizer) return;
         if (frame != null) frame.setVisible(false);
         frame = new JFrame();
         offscreenImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -238,6 +243,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param max the maximum value of the x-scale
      */
     public static void setXscale(double min, double max) {
+        if (isVisualizer) return;
         double size = max - min;
         synchronized (mouseLock) {
             xmin = min - BORDER * size;
@@ -251,6 +257,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param max the maximum value of the y-scale
      */
     public static void setYscale(double min, double max) {
+        if (isVisualizer) return;
         double size = max - min;
         synchronized (mouseLock) {
             ymin = min - BORDER * size;
@@ -264,6 +271,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param max the maximum value of the x- and y-scales
      */
     public static void setScale(double min, double max) {
+        if (isVisualizer) return;
         double size = max - min;
         synchronized (mouseLock) {
             xmin = min - BORDER * size;
@@ -291,6 +299,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param color the Color to make the background
      */
     public static void clear(Color color) {
+        if (isVisualizer) return;
         offscreen.setColor(color);
         offscreen.fillRect(0, 0, width, height);
         offscreen.setColor(penColor);
@@ -312,6 +321,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if r is negative
      */
     public static void setPenRadius(double r) {
+        if (isVisualizer) return;
         if (r < 0) throw new IllegalArgumentException("pen radius must be nonnegative");
         penRadius = r;
         float scaledPenRadius = (float) (r * DEFAULT_SIZE);
@@ -337,6 +347,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param color the Color to make the pen
      */
     public static void setPenColor(Color color) {
+        if (isVisualizer) return;
         penColor = color;
         offscreen.setColor(penColor);
     }
@@ -349,6 +360,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the amount of red, green, or blue are outside prescribed range
      */
     public static void setPenColor(int red, int green, int blue) {
+        if (isVisualizer) return;
         if (red   < 0 || red   >= 256) throw new IllegalArgumentException("amount of red must be between 0 and 255");
         if (green < 0 || green >= 256) throw new IllegalArgumentException("amount of red must be between 0 and 255");
         if (blue  < 0 || blue  >= 256) throw new IllegalArgumentException("amount of red must be between 0 and 255");
@@ -384,6 +396,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param y1 the y-coordinate of the destination point
      */
     public static void line(double x0, double y0, double x1, double y1) {
+        if (isVisualizer) return;
         offscreen.draw(new Line2D.Double(scaleX(x0), scaleY(y0), scaleX(x1), scaleY(y1)));
         draw();
     }
@@ -394,6 +407,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param y the y-coordinate of the pixel
      */
     private static void pixel(double x, double y) {
+        if (isVisualizer) return;
         offscreen.fillRect((int) Math.round(scaleX(x)), (int) Math.round(scaleY(y)), 1, 1);
     }
 
@@ -403,6 +417,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param y the y-coordinate of the point
      */
     public static void point(double x, double y) {
+        if (isVisualizer) return;
         double xs = scaleX(x);
         double ys = scaleY(y);
         double r = penRadius;
@@ -425,6 +440,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the radius of the circle is negative
      */
     public static void circle(double x, double y, double r) {
+        if (isVisualizer) return;
         if (r < 0) throw new IllegalArgumentException("circle radius must be nonnegative");
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -443,6 +459,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the radius of the circle is negative
      */
     public static void filledCircle(double x, double y, double r) {
+        if (isVisualizer) return;
         if (r < 0) throw new IllegalArgumentException("circle radius must be nonnegative");
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -463,6 +480,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if either of the axes are negative
      */
     public static void ellipse(double x, double y, double semiMajorAxis, double semiMinorAxis) {
+        if (isVisualizer) return;
         if (semiMajorAxis < 0) throw new IllegalArgumentException("ellipse semimajor axis must be nonnegative");
         if (semiMinorAxis < 0) throw new IllegalArgumentException("ellipse semiminor axis must be nonnegative");
         double xs = scaleX(x);
@@ -483,6 +501,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if either of the axes are negative
      */
     public static void filledEllipse(double x, double y, double semiMajorAxis, double semiMinorAxis) {
+        if (isVisualizer) return;
         if (semiMajorAxis < 0) throw new IllegalArgumentException("ellipse semimajor axis must be nonnegative");
         if (semiMinorAxis < 0) throw new IllegalArgumentException("ellipse semiminor axis must be nonnegative");
         double xs = scaleX(x);
@@ -506,6 +525,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the radius of the circle is negative
      */
     public static void arc(double x, double y, double r, double angle1, double angle2) {
+        if (isVisualizer) return;
         if (r < 0) throw new IllegalArgumentException("arc radius must be nonnegative");
         while (angle2 < angle1) angle2 += 360;
         double xs = scaleX(x);
@@ -525,6 +545,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if r is negative
      */
     public static void square(double x, double y, double r) {
+        if (isVisualizer) return;
         if (r < 0) throw new IllegalArgumentException("square side length must be nonnegative");
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -543,6 +564,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if r is negative
      */
     public static void filledSquare(double x, double y, double r) {
+        if (isVisualizer) return;
         if (r < 0) throw new IllegalArgumentException("square side length must be nonnegative");
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -563,6 +585,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if halfWidth or halfHeight is negative
      */
     public static void rectangle(double x, double y, double halfWidth, double halfHeight) {
+        if (isVisualizer) return;
         if (halfWidth  < 0) throw new IllegalArgumentException("half width must be nonnegative");
         if (halfHeight < 0) throw new IllegalArgumentException("half height must be nonnegative");
         double xs = scaleX(x);
@@ -583,6 +606,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if halfWidth or halfHeight is negative
      */
     public static void filledRectangle(double x, double y, double halfWidth, double halfHeight) {
+        if (isVisualizer) return;
         if (halfWidth  < 0) throw new IllegalArgumentException("half width must be nonnegative");
         if (halfHeight < 0) throw new IllegalArgumentException("half height must be nonnegative");
         double xs = scaleX(x);
@@ -617,6 +641,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param y an array of all the y-coordindates of the polygon
      */
     public static void filledPolygon(double[] x, double[] y) {
+        if (isVisualizer) return;
         int N = x.length;
         GeneralPath path = new GeneralPath();
         path.moveTo((float) scaleX(x[0]), (float) scaleY(y[0]));
@@ -635,6 +660,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 
     // get an image from the given filename
     private static Image getImage(String filename) {
+        if (isVisualizer) return null;
 
         // to read from file
         ImageIcon icon = new ImageIcon(filename);
@@ -665,6 +691,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the image is corrupt
      */
     public static void picture(double x, double y, String s) {
+        if (isVisualizer) return;
         Image image = getImage(s);
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -686,6 +713,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the image is corrupt
      */
     public static void picture(double x, double y, String s, double degrees) {
+        if (isVisualizer) return;
         Image image = getImage(s);
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -711,6 +739,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the image is corrupt
      */
     public static void picture(double x, double y, String s, double w, double h) {
+        if (isVisualizer) return;
         Image image = getImage(s);
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -742,6 +771,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @throws IllegalArgumentException if the image is corrupt
      */
     public static void picture(double x, double y, String s, double w, double h, double degrees) {
+        if (isVisualizer) return;
         Image image = getImage(s);
         double xs = scaleX(x);
         double ys = scaleY(y);
@@ -772,6 +802,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param s the text
      */
     public static void text(double x, double y, String s) {
+        if (isVisualizer) return;
         offscreen.setFont(font);
         FontMetrics metrics = offscreen.getFontMetrics();
         double xs = scaleX(x);
@@ -791,6 +822,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param degrees is the number of degrees to rotate counterclockwise
      */
     public static void text(double x, double y, String s, double degrees) {
+        if (isVisualizer) return;
         double xs = scaleX(x);
         double ys = scaleY(y);
         offscreen.rotate(Math.toRadians(-degrees), xs, ys);
@@ -806,6 +838,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param s the text
      */
     public static void textLeft(double x, double y, String s) {
+        if (isVisualizer) return;
         offscreen.setFont(font);
         FontMetrics metrics = offscreen.getFontMetrics();
         double xs = scaleX(x);
@@ -822,6 +855,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param s the text
      */
     public static void textRight(double x, double y, String s) {
+        if (isVisualizer) return;
         offscreen.setFont(font);
         FontMetrics metrics = offscreen.getFontMetrics();
         double xs = scaleX(x);
@@ -847,6 +881,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param t number of milliseconds
      */
     public static void show(int t) {
+        if (isVisualizer) return;
         defer = false;
         draw();
         try { Thread.sleep(t); }
@@ -861,12 +896,14 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * will be displayed on screen when called. This is the default.
      */
     public static void show() {
+        if (isVisualizer) return;
         defer = false;
         draw();
     }
 
     // draw onscreen if defer is false
     private static void draw() {
+        if (isVisualizer) return;
         if (defer) return;
         onscreen.drawImage(offscreenImage, 0, 0, null);
         frame.repaint();
@@ -882,6 +919,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param filename the name of the file with one of the required suffixes
      */
     public static void save(String filename) {
+        if (isVisualizer) return;
         File file = new File(filename);
         String suffix = filename.substring(filename.lastIndexOf('.') + 1);
 
@@ -917,6 +955,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * This method cannot be called directly.
      */
     public void actionPerformed(ActionEvent e) {
+        if (isVisualizer) return;
         FileDialog chooser = new FileDialog(StdDraw.frame, "Use a .png or .jpg extension", FileDialog.SAVE);
         chooser.setVisible(true);
         String filename = chooser.getFile();
@@ -980,6 +1019,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * This method cannot be called directly.
      */
     public void mousePressed(MouseEvent e) {
+        if (isVisualizer) return;
         synchronized (mouseLock) {
             mouseX = StdDraw.userX(e.getX());
             mouseY = StdDraw.userY(e.getY());
@@ -1000,6 +1040,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * This method cannot be called directly.
      */
     public void mouseDragged(MouseEvent e)  {
+        if (isVisualizer) return;
         synchronized (mouseLock) {
             mouseX = StdDraw.userX(e.getX());
             mouseY = StdDraw.userY(e.getY());
@@ -1010,6 +1051,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * This method cannot be called directly.
      */
     public void mouseMoved(MouseEvent e) {
+        if (isVisualizer) return;
         synchronized (mouseLock) {
             mouseX = StdDraw.userX(e.getX());
             mouseY = StdDraw.userY(e.getY());
