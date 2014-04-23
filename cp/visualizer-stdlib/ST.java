@@ -14,7 +14,8 @@
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.SortedMap;
-import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *  The <tt>ST</tt> class represents an ordered symbol table of generic
@@ -167,14 +168,15 @@ public class ST<Key extends Comparable<Key>, Value> implements Iterable<Key> {
      * @return all keys in the sybol table as an <tt>Iterable</tt>
      */
     public Iterable<Key> keys() {
-	HashSet<Key> keys = new HashSet<Key>();
+	Set<Key> keys = new TreeSet<Key>();
 	return rKeys(keys, first);
     }
 
-    private  HashSet<Key> rKeys(HashSet<Key> keys, Node n) { //TODO: make the keys print in some nicer order?
+    private  Set<Key> rKeys(Set<Key> keys, Node n) { //TODO: make the keys print in some nicer order?
 	if (n != null) {
 	    rKeys(keys, n.right);
-	    keys.add(n.key);
+	    if (n.value != null)
+		keys.add(n.key);
 	    rKeys(keys, n.left);
 	}
 	return keys;
