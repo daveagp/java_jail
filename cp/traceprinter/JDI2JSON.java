@@ -314,10 +314,22 @@ public class JDI2JSON {
             result.add("this", convertValue(sf.thisObject()));
             result_ordered.add("this");
 	}
+
+        // list args first
+        /* KNOWN ISSUE:
+           .arguments() gets the args which have names in LocalVariableTable,
+           but if there are none, we get an IllegalArgExc, and can use .getArgumentValues()
+           However, sometimes some args have names but not all. Such as within synthetic
+           lambda methods like "lambda$inc$0". For an unknown reason, trying .arguments()
+           causes a JDWP error in such frames. So sadly, those frames are incomplete. */
+
         List<LocalVariable> frame_vars = null, frame_args = null;
+        boolean completed_args = false;
         try {
             // args make sense to show first
             frame_args = sf.location().method().arguments(); //throwing statement
+            //if (frame_args.size() == sf.getArgumentValues().size()) {... // would be nice! issue above.
+            completed_args = true;
             for (LocalVariable lv : frame_args) {
                 //System.out.println(sf.location().method().getClass());
                 try {
@@ -329,9 +341,25 @@ public class JDI2JSON {
                     System.out.println("That shouldn't happen!");
                 }
             }
+        }
+        catch (AbsentInformationException e) {
+        }
+        // args did not have names, like a functional interface call...
+        // although hopefully a future Java version will give them names!
+        if (!completed_args) {
+            try {
+                List<Value> anon_args = sf.getArgumentValues();
+                for (int i=0; i<anon_args.size(); i++) {
+                    result.add("param#"+i, convertValue(anon_args.get(i)));
+                    result_ordered.add("param#"+i);
+                }
+            }
+            catch (InvalidStackFrameException e) {
+            }
+        }
 
-            // now non-args
-
+        // now non-args
+        try {
             /* We're using the fact that the hashCode tells us something
                about the variable's position (which is subject to change)
                to compensate for that the natural order of variables()
@@ -361,7 +389,7 @@ public class JDI2JSON {
         }
         catch (AbsentInformationException ex) {
             //System.out.println("AIE: can't list variables in " + sf.location());
-        }            
+        }     
         if (returnValue != null && (showVoid || returnValue != convertVoid)) {
             result.add("__return__", returnValue);
             result_ordered.add("__return__");
