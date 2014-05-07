@@ -322,14 +322,26 @@ public class JDI2JSON {
            However, sometimes some args have names but not all. Such as within synthetic
            lambda methods like "lambda$inc$0". For an unknown reason, trying .arguments()
            causes a JDWP error in such frames. So sadly, those frames are incomplete. */
+        
+        boolean JDWPerror = false;
+        try {
+            sf.getArgumentValues();
+        }
+        catch (com.sun.jdi.InternalException e) {
+            JDWPerror = true;
+            if (e.toString().contains("Unexpected JDWP Error: 35")) // expect JDWP error 35
+                JDWPerror = true;
+            else {
+                System.err.println('*'+e.toString()+'*');
+            }
+        }
 
         List<LocalVariable> frame_vars = null, frame_args = null;
         boolean completed_args = false;
         try {
             // args make sense to show first
             frame_args = sf.location().method().arguments(); //throwing statement
-            //if (frame_args.size() == sf.getArgumentValues().size()) {... // would be nice! issue above.
-            completed_args = true;
+            completed_args = !JDWPerror && frame_args.size() == sf.getArgumentValues().size();
             for (LocalVariable lv : frame_args) {
                 //System.out.println(sf.location().method().getClass());
                 try {
@@ -346,7 +358,7 @@ public class JDI2JSON {
         }
         // args did not have names, like a functional interface call...
         // although hopefully a future Java version will give them names!
-        if (!completed_args) {
+        if (!completed_args && !JDWPerror) {
             try {
                 List<Value> anon_args = sf.getArgumentValues();
                 for (int i=0; i<anon_args.size(); i++) {
@@ -356,6 +368,11 @@ public class JDI2JSON {
             }
             catch (InvalidStackFrameException e) {
             }
+        }
+        
+        if (JDWPerror) {
+            result.add("&hellip;?", jsonArray("NUMBER-LITERAL", jsonString("&hellip;?")));
+            result_ordered.add("&hellip;?");
         }
 
         // now non-args
