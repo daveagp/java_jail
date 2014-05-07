@@ -328,11 +328,10 @@ public class JDI2JSON {
             sf.getArgumentValues();
         }
         catch (com.sun.jdi.InternalException e) {
-            JDWPerror = true;
             if (e.toString().contains("Unexpected JDWP Error: 35")) // expect JDWP error 35
                 JDWPerror = true;
             else {
-                System.err.println('*'+e.toString()+'*');
+                throw e;
             }
         }
 
@@ -371,7 +370,7 @@ public class JDI2JSON {
         }
         
         if (JDWPerror) {
-            result.add("&hellip;?", jsonArray("NUMBER-LITERAL", jsonString("&hellip;?")));
+            result.add("&hellip;?", jsonArray("NUMBER-LITERAL", jsonString("&hellip;?"))); // hack since number-literal is just html
             result_ordered.add("&hellip;?");
         }
 
