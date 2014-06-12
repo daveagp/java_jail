@@ -4,9 +4,11 @@ import java.util.Scanner;
 /****
 Usage: 
  - takes one or more command line arguments, the first of which is a class name;
- - takes stdin that is a JSON object, where "bytecodes" is a map from class names to bytecodes
+ - takes stdin that is a JSON object with these fields:
+    "bytecodes" is a map from class names to bytecodes
+    "stdin" (optional) is standard input for the program being called
  - loads those classes and runs args[0]'s public static void main(String[] args) on args[1..]
- - the first line of output is either 'Error' or 'Success'
+ - the first line of output either starts with 'Error' or with 'Success'
  - Success means public static main(String[]) was found (we called Method.invoke), not that the invoke was trouble-free
 
 Sample usage: let's say we feed CompileToBytes this input:
@@ -35,6 +37,15 @@ import java.util.Map;
 import javax.json.*;
 
 public class RAMRun {
+    public static byte[] base16toBytes(String data) {
+        byte[] result = new byte[data.length()/2];
+        
+        for (int i=0; i<data.length()/2; i++)
+            result[i] = (byte)Integer.parseInt(data.substring(2*i, 2*i+2), 16);
+
+        return result;
+    }
+
     public static void main(String[] args) {
         JsonObject jo = null;
         try {
@@ -68,12 +79,7 @@ public class RAMRun {
                 }
                 String classfile = ((JsonString)me.getValue()).getString();
 
-                byte[] bytecode = new byte[classfile.length()/2];
-                
-                for (int i=0; i<classfile.length()/2; i++)
-                    bytecode[i] = (byte)Integer.parseInt(classfile.substring(2*i, 2*i+2), 16);
-                
-                bcl.define(classname, bytecode);
+                bcl.define(classname, base16toBytes(classfile));
             }
 
             // doesn't actually work.
@@ -98,6 +104,11 @@ public class RAMRun {
             for (int i=0; i<newargs.length; i++)
                 newargs[i] = args[i+1];
             System.out.println("Success: found "+args[0]+".main. Invoking...");
+            if (jo.getString("stdin") != null)
+                try {
+                    System.setIn(new java.io.ByteArrayInputStream(jo.getString("stdin").getBytes("UTF-8")));
+                }
+                catch (UnsupportedEncodingException e) {throw new RuntimeException(e.toString());}
             main.invoke(null, (Object)newargs);
         } catch (IllegalAccessException e) {
             //System.out.println("Error: illegal access exception");
