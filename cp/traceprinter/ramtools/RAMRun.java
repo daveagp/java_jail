@@ -104,11 +104,15 @@ public class RAMRun {
             for (int i=0; i<newargs.length; i++)
                 newargs[i] = args[i+1];
             System.out.println("Success: found "+args[0]+".main. Invoking...");
-            if (jo.getString("stdin") != null)
-                try {
-                    System.setIn(new java.io.ByteArrayInputStream(jo.getString("stdin").getBytes("UTF-8")));
-                }
-                catch (UnsupportedEncodingException e) {throw new RuntimeException(e.toString());}
+
+            String stdinForInvoke = "";
+            if (jo.containsKey("stdin"))
+                stdinForInvoke = jo.getString("stdin");
+            try {
+                System.setIn(new java.io.ByteArrayInputStream(stdinForInvoke.getBytes("UTF-8")));
+            }
+            catch (UnsupportedEncodingException e) {throw new RuntimeException(e.toString());}
+
             main.invoke(null, (Object)newargs);
         } catch (IllegalAccessException e) {
             //System.out.println("Error: illegal access exception");
