@@ -44,8 +44,12 @@ Installation steps:
 (0) It is highly recommended to NOT put this directory anywhere accessible
     via http, just for sanity's sake.
 (1) Get java. As of the time of writing, a suitable link for wget is: 
- http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-x64.tar.gz
-    Extract java to the ./java directory.
+
+wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u20-b26/jdk-8u20-linux-x64.tar.gz
+
+(props to http://stackoverflow.com/questions/10268583) 
+Extract java with gunzip and tar -xvf.
+Rename that jdk1.8.0_20 to "java"
 (2) You will need to copy some files from your system into ./lib64 --
     see ./lib64/.gitignore for the list of what we use. If you end up
     using more Java libraries, you might need to add more. We used
