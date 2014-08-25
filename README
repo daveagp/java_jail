@@ -99,6 +99,8 @@ The expected output is at cp/traceprinter/expected-output.txt
 (2) Try with safeexec (from java_jail):
 /path/to/safeexec --chroot_dir . --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < cp/traceprinter/test-input.txt
 
+Note: on at least one machine, nfile and nproc needed to be set to 100.
+
 ===
 
 I found these links useful at some point:
