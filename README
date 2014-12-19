@@ -55,8 +55,8 @@ Rename that jdk1.8.0_20 to "java"
     using more Java libraries, you might need to add more. We used
     "strace -f"/ldd/lsof to figure out what to put there. You probably
     can also just make a copy of all of /lib64 to ./lib64
-  * From Sasha Sirotkin: on Ubuntu, it appears also necessary for 
-    the lib/x86_64-linux-gnu folder to be copied to ./lib
+  * From Sasha Sirotkin: on Ubuntu, those files might instead need to
+    be copied from lib/x86_64-linux-gnu to ./lib/x86_64-linux-gnu
 (3) copy /etc/ld.so.cache to ./etc
 (4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
       EITHER:
@@ -99,7 +99,7 @@ The expected output is at cp/traceprinter/expected-output.txt
 (2) Try with safeexec (from java_jail):
 /path/to/safeexec --chroot_dir . --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < cp/traceprinter/test-input.txt
 
-Note: on at least one machine, nfile and nproc needed to be set to 100.
+Notes from different machines: on at least one machine, nfile and nproc needed to be set to 100.
 
 ===
 
