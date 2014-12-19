@@ -343,6 +343,10 @@ public class JDI2JSON {
             completed_args = !JDWPerror && frame_args.size() == sf.getArgumentValues().size();
             for (LocalVariable lv : frame_args) {
                 //System.out.println(sf.location().method().getClass());
+		if (lv.name().equals("args")) {
+		    Value v = sf.getValue(lv);
+		    if (v instanceof ArrayReference && ((ArrayReference)v).length()==0) continue;
+		}
                 try {
                     result.add(lv.name(),
                                convertValue(sf.getValue(lv)));
@@ -717,10 +721,23 @@ public class JDI2JSON {
                       );
     }
 
+    static String fakify(String realcode) {
+	String[] x = realcode.split("\n", -1);
+	for (int i=0; i<x.length; i++) {
+	    int pos = x[i].indexOf("//><");
+	    if (pos >= 0)
+		x[i] = x[i].substring(pos+4);	    
+	}
+	StringBuilder sb = new StringBuilder();
+	for (String s:x) {sb.append("\n");sb.append(s);}
+	return sb.substring(1);
+    }
+
     static JsonObject output(String usercode, JsonArray trace) {
         JsonObjectBuilder result = Json.createObjectBuilder();
         result
-            .add("code", usercode)
+            .add("code", fakify(usercode))
+            .add("stdin", InMemory.stdin) 
             .add("trace", trace);
         if (userlogged != null) result.add("userlog", userlogged.toString());
         return result.build();

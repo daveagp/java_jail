@@ -37,6 +37,7 @@ public class InMemory {
     String givenStdin;
     String mainClass;
     VirtualMachine vm;
+    static String stdin;
     Map<String, byte[]> bytecode;
 
     public final static long startTime = System.currentTimeMillis();
@@ -82,6 +83,7 @@ public class InMemory {
         this.optionsObject = frontend_data.getJsonObject("options");
         this.argsArray = frontend_data.getJsonArray("args");
         this.givenStdin = frontend_data.getJsonString("stdin").getString();
+	stdin = this.givenStdin;
 
         if (frontend_data.containsKey("visualizer_args") && (!frontend_data.isNull("visualizer_args"))) {
             JsonObject visualizer_args = frontend_data.getJsonObject("visualizer_args");
@@ -191,12 +193,30 @@ http://docs.oracle.com/javase/7/docs/jdk/api/jpda/jdi/com/sun/jdi/connect/Connec
 	    VirtualMachine result = connector.launch(args);
 	    //System.out.println("...done");
             return result;
-        } catch (java.io.IOException | VMStartException exc) {
-	    System.out.println("Hoey!");
+        } catch (VMStartException exc) {
+	    System.out.println("Hoeyx!");
+            System.out.println("Failed in launchTarget: " + exc.getMessage());
+            exc.printStackTrace();
+	    byte[] b = new byte[100000];
+	    System.out.println(exc.process().exitValue());
+	    try {
+		BufferedReader in = new BufferedReader(new InputStreamReader(exc.process().getErrorStream()));
+		String inputLine;
+		while ((inputLine = in.readLine()) != null)
+		    System.out.println(inputLine);
+		in = new BufferedReader(new InputStreamReader(exc.process().getInputStream()));
+		while ((inputLine = in.readLine()) != null)
+		    System.out.println(inputLine);
+
+	    }
+	    catch (java.io.IOException excx) {
+		System.out.println("Crud");
+	    }
+        } catch (java.io.IOException exc) {
             System.out.println("Failed in launchTarget: " + exc.getMessage());
             exc.printStackTrace();
         } catch (IllegalConnectorArgumentsException exc) {
-	    System.out.println("Hoey!");
+	    System.out.println("Hoeyy!");
             for (String S : exc.argumentNames()) {
                 System.out.println(S);
             }
