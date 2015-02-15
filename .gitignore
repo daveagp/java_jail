@@ -3,3 +3,4 @@
 proc
 compile
 etc/resolv.conf
+lib
