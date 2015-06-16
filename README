@@ -62,7 +62,7 @@ Rename that jdk1.8.0_20 to "java"
       EITHER:
       To mount once (until reboot or "umount /path/to/chroot/proc")
         sudo mount --bind -o ro,bind /proc /path/to/chroot/proc
-      To mount permanently, copy this line from /etc/mtab to /etc/fstab
+      To mount permanently, add this to /etc/fstab:
         /proc  /path/to/chroot/proc  none  bind
 (5) Mount necessary devices to /dev
         sudo mknod -m 0666 ./dev/null c 1 3
