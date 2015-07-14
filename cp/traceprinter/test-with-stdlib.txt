@@ -1,0 +1,7 @@
+{
+"usercode":
+ "public class Test { public static void main(String[] args) {    new Stack<Integer>().push(0); } }",
+"options": {},
+"args": [],
+"stdin": ""
+}

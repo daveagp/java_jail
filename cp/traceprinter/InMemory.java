@@ -42,6 +42,21 @@ public class InMemory {
 
     public final static long startTime = System.currentTimeMillis();
 
+    public static String getFileContents(String filename) {
+        StringBuilder result = new StringBuilder();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(filename));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                result.append(line).append("\n");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("getFileContents " + filename + " failed: " + e.toString());
+        }
+        return result.toString();
+    }
+
+
     public static void main(String[] args) {
 
         JDI2JSON.userlog("Debugger VM maxMemory: " + Runtime.getRuntime().maxMemory() / 1024 / 1024 + "M");    
@@ -115,11 +130,35 @@ public class InMemory {
         CompileToBytes c2b = new CompileToBytes();
 
         c2b.compilerOutput = new StringWriter();
-        c2b.options = Arrays.asList("-g -Xmaxerrs 1".split(" "));
+        c2b.options = Arrays.asList("-g","-Xmaxerrs","1");//,"-classpath",System.getProperty("java.class.path"));
+
         DiagnosticCollector<JavaFileObject> errorCollector = new DiagnosticCollector<>();
         c2b.diagnosticListener = errorCollector;
 
-        bytecode = c2b.compileFile(mainClass, usercode);
+        /*
+          For some reason the JVM at Princeton doesn't actually figure out
+          how to read these particular files off its classpath. So we'll
+          just throw them all in there manually. 
+          TODO: Optimize and only use files actually referenced by student code.
+         */
+        boolean isPrinceton = System.getProperty("java.class.path").contains("cos126");
+
+        if (isPrinceton) {
+            String[][] fileinfo = new String[][] {
+                {"Stack", getFileContents("cp/visualizer-stdlib/Stack.java")},
+                {"Queue", getFileContents("cp/visualizer-stdlib/Queue.java")},
+                {"ST", getFileContents("cp/visualizer-stdlib/ST.java")},
+                {"StdIn", getFileContents("cp/visualizer-stdlib/StdIn.java")},
+                {"StdOut", getFileContents("cp/visualizer-stdlib/StdOut.java")},
+                {"Stopwatch", getFileContents("cp/visualizer-stdlib/Stopwatch.java")},
+                {mainClass, usercode}
+            };           
+            bytecode = c2b.compileFiles(fileinfo);
+        }
+        else {
+            // do the normal thing
+            bytecode = c2b.compileFile(mainClass, usercode);
+        }
 
         if (bytecode == null) {
             for (Diagnostic<? extends JavaFileObject> err : errorCollector.getDiagnostics())
