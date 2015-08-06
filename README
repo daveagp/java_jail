@@ -50,13 +50,18 @@ wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-
 (props to http://stackoverflow.com/questions/10268583) 
 Extract java with gunzip and tar -xvf.
 Rename that jdk1.8.0_20 to "java"
-(2) You will need to copy some files from your system into ./lib64 --
-    see ./lib64/.gitignore for the list of what we use. If you end up
-    using more Java libraries, you might need to add more. We used
-    "strace -f"/ldd/lsof to figure out what to put there. You probably
-    can also just make a copy of all of /lib64 to ./lib64
-  * From Sasha Sirotkin: on Ubuntu, those files might instead need to
-    be copied from lib/x86_64-linux-gnu to ./lib/x86_64-linux-gnu
+(2) You will need to copy some library files into the jail.
+    The simplest thing would be to make a recursive copy of /lib64
+    into ./lib64, and likewise with /lib and /usr/lib. This way
+    the libraries available in the system are still available
+    after you chroot.
+
+    HARD MODE: If you want to copy a minimum number of files, a good start is
+    to run "ldd java/bin/java" from within java_jail. 
+    See ./lib64/.gitignore for what we needed on our dev machine.
+      (From Sasha Sirotkin: on Ubuntu, those files might instead need to
+       be in lib/x86_64-linux-gnu instead.)
+    strace -f can be useful to disgnose obscure linker problems.
 (3) copy /etc/ld.so.cache to ./etc
 (4) mkdir ./proc, then you will need to mount /proc to ./proc -- use
       EITHER:
@@ -98,7 +103,7 @@ installed, here is a way how to test whether things are installed correctly.
 The expected output is at cp/traceprinter/expected-output.txt
 
 (2) Try with safeexec (from java_jail):
-/path/to/safeexec --chroot_dir . --exec_dir / --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < cp/traceprinter/test-input.txt
+/path/to/safeexec --chroot_dir . --exec_dir / --share_newnet --nproc 50 --mem 3000000 --nfile 30 --env_vars CLASSPATH=/cp/:/cp/javax.json-1.0.jar:/java/lib/tools.jar --exec /java/bin/java traceprinter.InMemory < cp/traceprinter/test-input.txt
 
 Notes from different machines: on at least one machine, nfile and nproc needed to be set to 100.
 
